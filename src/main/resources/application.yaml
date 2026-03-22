@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ochestration
+
+server:
+  port: 8080
+
+gateway:
+  toss-test:
+    base-url: ${TOSS_TEST_BASE_URL:https://api.tosspayments.com}
+    secret-key: ${TOSS_TEST_SECRET_KEY:}
+    connect-timeout-ms: ${PG_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${PG_READ_TIMEOUT_MS:5000}
