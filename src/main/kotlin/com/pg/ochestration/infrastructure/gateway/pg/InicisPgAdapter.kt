@@ -23,7 +23,7 @@ class InicisPgAdapter(
 
     override fun supports(provider: Provider): Boolean = provider == Provider.INICIS
 
-    override fun approve(command: GatewayApproveCommand): GatewayApproveResult {
+    override suspend fun approve(command: GatewayApproveCommand): GatewayApproveResult {
         if (command.metadata["stubFail"] == "true") {
             return failure(Provider.INICIS, "PG_TIMEOUT", "Inicis stub transient failure")
         }
@@ -38,7 +38,7 @@ class InicisPgAdapter(
         )
     }
 
-    override fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
+    override suspend fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
         return GatewayCancelResult(
             success = true,
             provider = Provider.INICIS,
@@ -49,7 +49,7 @@ class InicisPgAdapter(
         )
     }
 
-    override fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
+    override suspend fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
         return GatewayPaymentResult(
             success = true,
             provider = Provider.INICIS,

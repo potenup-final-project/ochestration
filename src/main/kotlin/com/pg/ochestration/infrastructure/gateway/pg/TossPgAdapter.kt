@@ -11,15 +11,20 @@ import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.domain.service.FailureClassifier
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
+import io.netty.channel.ChannelOption
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
-import org.springframework.web.client.RestClientResponseException
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import org.springframework.web.reactive.function.client.awaitBody
+import reactor.netty.http.client.HttpClient
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
+import java.time.Duration
 import java.time.Instant
 
 @Component
@@ -30,9 +35,16 @@ class TossPgAdapter(
     private val objectMapper: ObjectMapper
 ) : PaymentProviderGateway {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val restClient: RestClient = RestClient.builder()
+    private val webClient: WebClient = WebClient.builder()
         .baseUrl(tossProperties.baseUrl)
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .clientConnector(
+            ReactorClientHttpConnector(
+                HttpClient.create()
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, tossProperties.connectTimeoutMs.toInt())
+                    .responseTimeout(Duration.ofMillis(tossProperties.readTimeoutMs))
+            )
+        )
         .defaultHeaders { headers ->
             if (tossProperties.secretKey.isNotBlank()) {
                 headers.setBasicAuth(tossProperties.secretKey, "")
@@ -42,7 +54,7 @@ class TossPgAdapter(
 
     override fun supports(provider: Provider): Boolean = provider == Provider.TOSS
 
-    override fun approve(command: GatewayApproveCommand): GatewayApproveResult {
+    override suspend fun approve(command: GatewayApproveCommand): GatewayApproveResult {
         val paymentKey = command.metadata["paymentKey"]
             ?: return missingFieldFailure("paymentKey", Provider.TOSS)
 
@@ -53,13 +65,12 @@ class TossPgAdapter(
         )
 
         return runCatching {
-            val responseBody = restClient.post()
+            val responseBody = webClient.post()
                 .uri("/v1/payments/confirm")
                 .header("Idempotency-Key", command.idempotencyKey)
-                .body(body)
+                .bodyValue(body)
                 .retrieve()
-                .body(String::class.java)
-                .orEmpty()
+                .awaitBody<String>()
 
             val json = objectMapper.readTree(responseBody)
             GatewayApproveResult(
@@ -78,16 +89,15 @@ class TossPgAdapter(
         }
     }
 
-    override fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
+    override suspend fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
         val body = mapOf("cancelReason" to command.reason)
         return runCatching {
-            val responseBody = restClient.post()
+            val responseBody = webClient.post()
                 .uri("/v1/payments/{paymentKey}/cancel", command.providerTxId)
                 .header("Idempotency-Key", command.idempotencyKey)
-                .body(body)
+                .bodyValue(body)
                 .retrieve()
-                .body(String::class.java)
-                .orEmpty()
+                .awaitBody<String>()
 
             val json = objectMapper.readTree(responseBody)
             GatewayCancelResult(
@@ -103,13 +113,12 @@ class TossPgAdapter(
         }
     }
 
-    override fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
+    override suspend fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
         return runCatching {
-            val responseBody = restClient.get()
+            val responseBody = webClient.get()
                 .uri("/v1/payments/{paymentKey}", query.providerTxId)
                 .retrieve()
-                .body(String::class.java)
-                .orEmpty()
+                .awaitBody<String>()
 
             val json = objectMapper.readTree(responseBody)
             val status = when (json.path("status").asText()) {
@@ -164,7 +173,7 @@ class TossPgAdapter(
 
     private fun toFailure(throwable: Throwable): GatewayFailure {
         val defaultCode = "TOSS_UNKNOWN_ERROR"
-        if (throwable is RestClientResponseException) {
+        if (throwable is WebClientResponseException) {
             val body = throwable.responseBodyAsString
             val json = runCatching { objectMapper.readTree(body) as JsonNode }.getOrNull()
             val code = json?.path("code")?.asText(null) ?: "HTTP_${throwable.statusCode.value()}"

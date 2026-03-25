@@ -33,7 +33,7 @@ class PgOrchestrator(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun approve(command: ApprovePaymentCommand): Payment {
+    suspend fun approve(command: ApprovePaymentCommand): Payment {
         val paymentId = paymentRepository.nextPaymentId()
         val selection = providerSelectionPolicy.selectForApprove(command.merchantId, command.preferredPrimaryProvider)
 

@@ -72,7 +72,7 @@ data class GatewayPaymentResult(
 
 interface PaymentProviderGateway {
     fun supports(provider: Provider): Boolean
-    fun approve(command: GatewayApproveCommand): GatewayApproveResult
-    fun cancel(command: GatewayCancelCommand): GatewayCancelResult
-    fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult
+    suspend fun approve(command: GatewayApproveCommand): GatewayApproveResult
+    suspend fun cancel(command: GatewayCancelCommand): GatewayCancelResult
+    suspend fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult
 }

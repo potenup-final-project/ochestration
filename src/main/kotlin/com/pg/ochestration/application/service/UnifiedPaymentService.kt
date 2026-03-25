@@ -19,7 +19,7 @@ class UnifiedPaymentService(
     private val paymentRepository: PaymentRepository,
     private val gateways: List<PaymentProviderGateway>
 ) {
-    fun approve(
+    suspend fun approve(
         merchantId: String,
         orderId: String,
         amount: Long,
@@ -43,12 +43,12 @@ class UnifiedPaymentService(
         )
     }
 
-    fun getPayment(paymentId: String): Payment {
+    suspend fun getPayment(paymentId: String): Payment {
         return paymentRepository.findById(paymentId)
             ?: throw IllegalArgumentException("Payment not found: $paymentId")
     }
 
-    fun cancel(
+    suspend fun cancel(
         paymentId: String,
         reason: String,
         idempotencyKey: String?,

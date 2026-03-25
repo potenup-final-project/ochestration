@@ -20,7 +20,7 @@ class PaymentController(
     private val merchantId = "merchant-001"
 
     @PostMapping("/approve")
-    fun approve(@RequestBody request: PaymentApproveRequest): PaymentView {
+    suspend fun approve(@RequestBody request: PaymentApproveRequest): PaymentView {
         val payment = unifiedPaymentService.approve(
             merchantId = merchantId,
             orderId = request.orderId,
@@ -35,12 +35,12 @@ class PaymentController(
     }
 
     @GetMapping("/{paymentId}")
-    fun getPayment(@PathVariable paymentId: String): PaymentView {
+    suspend fun getPayment(@PathVariable paymentId: String): PaymentView {
         return PaymentView.from(unifiedPaymentService.getPayment(paymentId))
     }
 
     @PostMapping("/{paymentId}/cancel")
-    fun cancel(
+    suspend fun cancel(
         @PathVariable paymentId: String,
         @RequestBody request: PaymentCancelRequest
     ): PaymentCancelResponse {

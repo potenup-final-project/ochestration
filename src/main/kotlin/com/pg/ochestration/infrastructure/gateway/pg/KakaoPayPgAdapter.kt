@@ -23,7 +23,7 @@ class KakaoPayPgAdapter(
 
     override fun supports(provider: Provider): Boolean = provider == Provider.KAKAOPAY
 
-    override fun approve(command: GatewayApproveCommand): GatewayApproveResult {
+    override suspend fun approve(command: GatewayApproveCommand): GatewayApproveResult {
         if (command.metadata["stubFail"] == "true") {
             return failure(Provider.KAKAOPAY, "PG_TIMEOUT", "KakaoPay stub transient failure")
         }
@@ -38,7 +38,7 @@ class KakaoPayPgAdapter(
         )
     }
 
-    override fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
+    override suspend fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
         return GatewayCancelResult(
             success = true,
             provider = Provider.KAKAOPAY,
@@ -49,7 +49,7 @@ class KakaoPayPgAdapter(
         )
     }
 
-    override fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
+    override suspend fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
         return GatewayPaymentResult(
             success = true,
             provider = Provider.KAKAOPAY,
