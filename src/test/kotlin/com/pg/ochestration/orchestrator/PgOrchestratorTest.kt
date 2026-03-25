@@ -18,6 +18,7 @@ import com.pg.ochestration.domain.model.ProviderHealthStatus
 import com.pg.ochestration.infrastructure.persistence.memory.PaymentRepository
 import com.pg.ochestration.infrastructure.persistence.memory.ProviderConnectionRepository
 import com.pg.ochestration.infrastructure.persistence.memory.ProviderHealthRepository
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -34,18 +35,20 @@ class PgOrchestratorTest {
             )
         )
 
-        val payment = orchestrator.approve(
-            ApprovePaymentCommand(
-                merchantId = "merchant-001",
-                orderId = "order-001",
-                amount = 10_000,
-                currency = "KRW",
-                idempotencyKey = "idem-001",
-                requestedAt = Instant.now(),
-                preferredPrimaryProvider = null,
-                metadata = mapOf("paymentKey" to "test-payment-key")
+        val payment = runBlocking {
+            orchestrator.approve(
+                ApprovePaymentCommand(
+                    merchantId = "merchant-001",
+                    orderId = "order-001",
+                    amount = 10_000,
+                    currency = "KRW",
+                    idempotencyKey = "idem-001",
+                    requestedAt = Instant.now(),
+                    preferredPrimaryProvider = null,
+                    metadata = mapOf("paymentKey" to "test-payment-key")
+                )
             )
-        )
+        }
 
         assertEquals(PaymentStatus.APPROVED, payment.status)
         assertEquals(Provider.KAKAOPAY, payment.approvedProvider)
@@ -75,18 +78,20 @@ class PgOrchestratorTest {
             )
         )
 
-        val payment = orchestrator.approve(
-            ApprovePaymentCommand(
-                merchantId = "merchant-001",
-                orderId = "order-001",
-                amount = 10_000,
-                currency = "KRW",
-                idempotencyKey = "idem-001",
-                requestedAt = Instant.now(),
-                preferredPrimaryProvider = null,
-                metadata = mapOf("paymentKey" to "test-payment-key")
+        val payment = runBlocking {
+            orchestrator.approve(
+                ApprovePaymentCommand(
+                    merchantId = "merchant-001",
+                    orderId = "order-001",
+                    amount = 10_000,
+                    currency = "KRW",
+                    idempotencyKey = "idem-001",
+                    requestedAt = Instant.now(),
+                    preferredPrimaryProvider = null,
+                    metadata = mapOf("paymentKey" to "test-payment-key")
+                )
             )
-        )
+        }
 
         assertEquals(PaymentStatus.FAILED, payment.status)
         assertEquals(1, payment.attempts.size)
@@ -139,9 +144,9 @@ class PgOrchestratorTest {
     ) : PaymentProviderGateway {
         override fun supports(provider: Provider): Boolean = this.provider == provider
 
-        override fun approve(command: GatewayApproveCommand): GatewayApproveResult = approveResult
+        override suspend fun approve(command: GatewayApproveCommand): GatewayApproveResult = approveResult
 
-        override fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
+        override suspend fun cancel(command: GatewayCancelCommand): GatewayCancelResult {
             return GatewayCancelResult(
                 success = true,
                 provider = provider,
@@ -151,7 +156,7 @@ class PgOrchestratorTest {
             )
         }
 
-        override fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
+        override suspend fun getPayment(query: GatewayPaymentQuery): GatewayPaymentResult {
             return GatewayPaymentResult(
                 success = true,
                 provider = provider,
