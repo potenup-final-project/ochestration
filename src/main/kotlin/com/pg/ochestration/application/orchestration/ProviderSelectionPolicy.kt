@@ -6,8 +6,8 @@ import com.pg.ochestration.domain.model.FilteredOutProvider
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.ProviderFilteredOutReason
 import com.pg.ochestration.domain.model.ProviderHealthStatus
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderConnectionRepository
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderHealthRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 

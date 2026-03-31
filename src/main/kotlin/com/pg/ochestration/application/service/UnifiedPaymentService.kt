@@ -8,7 +8,7 @@ import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
 import com.pg.ochestration.presentation.web.dto.PaymentFailureView
 import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
-import com.pg.ochestration.infrastructure.persistence.memory.PaymentRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
