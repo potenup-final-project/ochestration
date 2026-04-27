@@ -7,8 +7,8 @@ import com.pg.ochestration.domain.model.ProviderCapability
 import com.pg.ochestration.domain.model.ProviderConnection
 import com.pg.ochestration.domain.model.ProviderHealthStatus
 import com.pg.ochestration.presentation.web.dto.ProviderConnectRequest
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderConnectionRepository
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderHealthRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

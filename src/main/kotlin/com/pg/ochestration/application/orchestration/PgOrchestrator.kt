@@ -9,7 +9,7 @@ import com.pg.ochestration.domain.model.PaymentAttempt
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.SelectionSummary
-import com.pg.ochestration.infrastructure.persistence.memory.PaymentRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Instant

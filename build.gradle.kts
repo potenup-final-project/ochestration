@@ -1,6 +1,9 @@
 plugins {
     kotlin("jvm") version "2.2.21"
+    kotlin("kapt") version "2.2.21"
     kotlin("plugin.spring") version "2.2.21"
+    kotlin("plugin.jpa") version "2.2.21"
+    kotlin("plugin.allopen") version "2.2.21"
     id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
 }
@@ -20,17 +23,40 @@ repositories {
 }
 
 dependencies {
+    // Web
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+    // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("tools.jackson.module:jackson-module-kotlin")
+
+    // Persistence
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    runtimeOnly("com.mysql:mysql-connector-j")
+    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+    kapt("com.querydsl:querydsl-apt:5.1.0:jakarta")
+    kapt("jakarta.persistence:jakarta.persistence-api")
+
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
+}
+
+noArg {
+    annotation("jakarta.persistence.Entity")
 }
 
 kotlin {
