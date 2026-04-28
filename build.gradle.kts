@@ -56,9 +56,6 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
-    annotation("org.springframework.stereotype.Repository")
-    annotation("org.springframework.stereotype.Service")
-    annotation("org.springframework.stereotype.Component")
 }
 
 noArg {
