@@ -43,16 +43,22 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     // Testing
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+    testImplementation("org.springframework.boot:spring-boot-jpa-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("com.h2database:h2")
 }
 
 allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+    annotation("org.springframework.stereotype.Repository")
+    annotation("org.springframework.stereotype.Service")
+    annotation("org.springframework.stereotype.Component")
 }
 
 noArg {
@@ -61,7 +67,11 @@ noArg {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+            "-Xno-param-assertions"
+        )
     }
 }
 
