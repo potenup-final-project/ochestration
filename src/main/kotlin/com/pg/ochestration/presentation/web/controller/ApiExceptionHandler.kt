@@ -2,6 +2,8 @@ package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.domain.exception.AuthException
 import com.pg.ochestration.domain.exception.EnvironmentMismatchException
+import com.pg.ochestration.domain.exception.InvalidApiKeyStateException
+import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
 import com.pg.ochestration.presentation.web.dto.ApiErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -34,6 +36,8 @@ class ApiExceptionHandler {
     fun handleAuthException(ex: AuthException): ResponseEntity<ApiErrorResponse> {
         val status = when (ex) {
             is EnvironmentMismatchException -> HttpStatus.FORBIDDEN
+            is PaymentAccessDeniedException -> HttpStatus.FORBIDDEN
+            is InvalidApiKeyStateException -> HttpStatus.CONFLICT
             else -> HttpStatus.UNAUTHORIZED
         }
         return ResponseEntity.status(status).body(
