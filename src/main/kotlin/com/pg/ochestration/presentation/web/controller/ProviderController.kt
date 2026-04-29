@@ -1,12 +1,14 @@
 package com.pg.ochestration.presentation.web.controller
 
+import com.pg.ochestration.application.service.ProviderManagementService
 import com.pg.ochestration.domain.model.Provider
+import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.presentation.web.dto.ProviderConnectRequest
 import com.pg.ochestration.presentation.web.dto.ProviderConnectionResponse
 import com.pg.ochestration.presentation.web.dto.ProviderDisconnectResponse
 import com.pg.ochestration.presentation.web.dto.ProviderHealthResponse
 import com.pg.ochestration.presentation.web.dto.ProviderHealthUpdateRequest
-import com.pg.ochestration.application.service.ProviderManagementService
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -20,11 +22,14 @@ import org.springframework.web.bind.annotation.RestController
 class ProviderController(
     private val providerManagementService: ProviderManagementService
 ) {
-    private val merchantId = "merchant-001"
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @PostMapping("/connect")
-    fun connect(@RequestBody request: ProviderConnectRequest): ProviderConnectionResponse {
-        val connected = providerManagementService.connect(merchantId, request)
+    fun connect(
+        @RequestBody request: ProviderConnectRequest,
+        principal: MerchantPrincipal
+    ): ProviderConnectionResponse {
+        val connected = providerManagementService.connect(principal.merchantId, request)
         return ProviderConnectionResponse(
             providerConnectionId = connected.providerConnectionId,
             merchantId = connected.merchantId,
@@ -35,7 +40,8 @@ class ProviderController(
     }
 
     @GetMapping
-    fun getProviders(): List<ProviderConnectionResponse> {
+    fun getProviders(principal: MerchantPrincipal): List<ProviderConnectionResponse> {
+        log.debug("Provider 목록 조회: merchantId={}", principal.merchantId)
         return providerManagementService.listConnections().map {
             ProviderConnectionResponse(
                 providerConnectionId = it.providerConnectionId,
@@ -48,8 +54,11 @@ class ProviderController(
     }
 
     @DeleteMapping("/{provider}")
-    fun disconnect(@PathVariable provider: Provider): ProviderDisconnectResponse {
-        val disconnected = providerManagementService.disconnect(merchantId, provider)
+    fun disconnect(
+        @PathVariable provider: Provider,
+        principal: MerchantPrincipal
+    ): ProviderDisconnectResponse {
+        val disconnected = providerManagementService.disconnect(principal.merchantId, provider)
         return ProviderDisconnectResponse(
             provider = disconnected.provider,
             merchantId = disconnected.merchantId,
