@@ -18,7 +18,9 @@ import org.springframework.test.context.TestPropertySource
         "gateway.toss-test.base-url=http://localhost",
         "gateway.toss-test.secret-key=test-secret",
         "gateway.toss-test.connect-timeout-ms=1000",
-        "gateway.toss-test.read-timeout-ms=1000"
+        "gateway.toss-test.read-timeout-ms=1000",
+        "auth.api-key.pepper=test-pepper-that-is-32-characters-minimum",
+        "auth.api-key.enabled=false"
     ]
 )
 class OchestrationApplicationTests {
