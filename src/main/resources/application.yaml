@@ -25,3 +25,9 @@ gateway:
     secret-key: ${TOSS_TEST_SECRET_KEY}
     connect-timeout-ms: ${PG_CONNECT_TIMEOUT_MS}
     read-timeout-ms: ${PG_READ_TIMEOUT_MS}
+
+auth:
+  api-key:
+    pepper: ${AUTH_API_KEY_PEPPER}
+    enabled: ${AUTH_API_KEY_ENABLED:true}
+    grace-period-hours: 72
