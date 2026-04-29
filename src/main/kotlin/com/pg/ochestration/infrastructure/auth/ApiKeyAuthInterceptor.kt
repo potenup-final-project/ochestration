@@ -46,7 +46,6 @@ class ApiKeyAuthInterceptor(
             ?: throw InvalidApiKeyException()
 
         apiKey.ensureNotExpired()
-        apiKey.ensureNotRevoked()
 
         if (!apiKey.isActive()) throw ExpiredApiKeyException(apiKey.keyId)
 
