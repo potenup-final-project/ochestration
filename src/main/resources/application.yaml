@@ -30,4 +30,4 @@ auth:
   api-key:
     pepper: ${AUTH_API_KEY_PEPPER}
     enabled: ${AUTH_API_KEY_ENABLED:true}
-    grace-period-hours: 72
+    grace-period-hours: 24
