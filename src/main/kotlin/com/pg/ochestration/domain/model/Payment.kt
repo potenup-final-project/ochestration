@@ -1,5 +1,6 @@
 package com.pg.ochestration.domain.model
 
+import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
 import java.time.Instant
 
 data class Payment(
@@ -22,4 +23,9 @@ data class Payment(
     val selectionSummary: SelectionSummary,
     val metadata: Map<String, String> = emptyMap(),
     val cancelReason: String? = null
-)
+) {
+    fun ensureOwnedBy(requestingMerchantId: String) {
+        if (this.merchantId != requestingMerchantId)
+            throw PaymentAccessDeniedException(paymentId, requestingMerchantId)
+    }
+}
