@@ -41,7 +41,9 @@ data class PaymentCancelResponse(
 )
 
 data class ApiErrorResponse(
-    val message: String
+    val errorCode: String,
+    val message: String,
+    val timestamp: Instant = Instant.now()
 )
 
 data class PaymentView(
