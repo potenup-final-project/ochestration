@@ -1,9 +1,9 @@
 package com.pg.ochestration.application.usecase
 
 import com.pg.ochestration.application.port.out.MerchantRepository
+import com.pg.ochestration.application.port.out.ProviderConnectionCountPort
 import com.pg.ochestration.domain.exception.MerchantNotFoundException
 import com.pg.ochestration.domain.model.MerchantStatus
-import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,7 +16,7 @@ data class RequestLiveUpgradeResult(
 @Service
 class RequestLiveUpgradeUseCase(
     private val merchantRepository: MerchantRepository,
-    private val providerConnectionRepository: ProviderConnectionRepository
+    private val providerConnectionCountPort: ProviderConnectionCountPort
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -29,7 +29,7 @@ class RequestLiveUpgradeUseCase(
         val merchant = merchantRepository.findById(merchantId)
             ?: throw MerchantNotFoundException(merchantId)
 
-        val connectedCount = providerConnectionRepository.countConnected()
+        val connectedCount = providerConnectionCountPort.countConnected()
         merchant.ensureEligibleForLiveUpgrade(connectedCount)
 
         val updated = merchant.applyLiveUpgradeRequest(
