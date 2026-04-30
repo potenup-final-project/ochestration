@@ -1,6 +1,8 @@
 package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.application.service.ProviderManagementService
+import com.pg.ochestration.domain.exception.EnvironmentMismatchForOnboardingException
+import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.presentation.web.dto.ProviderConnectRequest
@@ -29,6 +31,9 @@ class ProviderController(
         @RequestBody request: ProviderConnectRequest,
         principal: MerchantPrincipal
     ): ProviderConnectionResponse {
+        if (principal.environment == ApiKeyEnvironment.SANDBOX) {
+            throw EnvironmentMismatchForOnboardingException("LIVE", "SANDBOX")
+        }
         val connected = providerManagementService.connect(principal.merchantId, request)
         return ProviderConnectionResponse(
             providerConnectionId = connected.providerConnectionId,
@@ -58,6 +63,9 @@ class ProviderController(
         @PathVariable provider: Provider,
         principal: MerchantPrincipal
     ): ProviderDisconnectResponse {
+        if (principal.environment == ApiKeyEnvironment.SANDBOX) {
+            throw EnvironmentMismatchForOnboardingException("LIVE", "SANDBOX")
+        }
         val disconnected = providerManagementService.disconnect(principal.merchantId, provider)
         return ProviderDisconnectResponse(
             provider = disconnected.provider,
