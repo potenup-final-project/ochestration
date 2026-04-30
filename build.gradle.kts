@@ -37,6 +37,9 @@ dependencies {
     // Cache
     implementation("com.github.ben-manes.caffeine:caffeine")
 
+    // Security (BCrypt 전용, 전체 Spring Security 불필요)
+    implementation("org.springframework.security:spring-security-crypto")
+
     // Persistence
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -48,12 +51,12 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+    testImplementation("org.springframework.boot:spring-boot-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-jpa-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("com.h2database:h2")
+    testRuntimeOnly("com.h2database:h2")
 }
 
 allOpen {
