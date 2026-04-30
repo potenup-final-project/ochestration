@@ -1,5 +1,6 @@
 package com.pg.ochestration.infrastructure.persistence.jpa
 
+import com.pg.ochestration.application.port.out.ProviderConnectionCountPort
 import com.pg.ochestration.domain.model.ConnectionStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.ProviderConnection
@@ -12,7 +13,7 @@ import java.util.UUID
 class ProviderConnectionRepository(
     private val jpaRepository: ProviderConnectionJpaRepository,
     private val queryDslRepository: ProviderConnectionQueryDslRepository
-) {
+) : ProviderConnectionCountPort {
     @Transactional
     fun upsert(
         merchantId: String,
@@ -53,7 +54,7 @@ class ProviderConnectionRepository(
         return queryDslRepository.getConnectionStatus(provider)
     }
 
-    fun countConnected(): Int {
+    override fun countConnected(): Int {
         return jpaRepository.findAll().count { it.status == ConnectionStatus.CONNECTED }
     }
 
