@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -28,10 +30,10 @@ class RegisterMerchantUseCase(
     private val merchantRepository: MerchantRepository,
     private val emailVerificationTokenRepository: EmailVerificationTokenRepository,
     private val emailPort: EmailPort,
+    private val passwordEncoder: BCryptPasswordEncoder,
     @Value("\${onboarding.email-token.ttl-minutes:30}") private val emailTokenTtlMinutes: Long
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val passwordEncoder = BCryptPasswordEncoder()
 
     @Transactional
     fun register(email: String, password: String, businessName: String?): RegisterMerchantResult {
@@ -66,11 +68,20 @@ class RegisterMerchantUseCase(
         )
         emailVerificationTokenRepository.save(emailToken)
 
-        // 트랜잭션 커밋 후 이메일 발송 (fire-and-forget, 실패 무시)
-        runCatching {
-            emailPort.sendEmailVerification(email, rawToken, merchantId)
-        }.onFailure { ex ->
-            log.warn("이메일 인증 토큰 발송 실패 — merchantId={}, email={}, 원인={}", merchantId, email, ex.message)
+        // DB 커밋 이후에 이메일 발송 (fire-and-forget, 실패 무시)
+        val sendEmail = {
+            runCatching {
+                emailPort.sendEmailVerification(email, rawToken, merchantId)
+            }.onFailure { ex ->
+                log.warn("이메일 인증 토큰 발송 실패 — merchantId={}, email={}, 원인={}", merchantId, email, ex.message)
+            }
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() { sendEmail() }
+            })
+        } else {
+            sendEmail()
         }
 
         log.info("가맹점 회원가입 완료 — merchantId={}, email={}", merchantId, email)

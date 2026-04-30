@@ -9,6 +9,7 @@ import com.pg.ochestration.domain.model.Merchant
 import com.pg.ochestration.domain.model.MerchantStatus
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -22,6 +23,7 @@ class RegisterMerchantUseCaseTest {
         merchantRepository = fakeMerchantRepository,
         emailVerificationTokenRepository = fakeEmailTokenRepository,
         emailPort = fakeEmailPort,
+        passwordEncoder = BCryptPasswordEncoder(),
         emailTokenTtlMinutes = 30L
     )
 
