@@ -3,7 +3,9 @@ package com.pg.ochestration.infrastructure.config
 import com.pg.ochestration.infrastructure.auth.ApiKeyAuthInterceptor
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipalArgumentResolver
 import com.pg.ochestration.infrastructure.auth.OnboardingTokenInterceptor
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -21,7 +23,6 @@ class AuthWebMvcConfigurer(
                 "/api/auth/**",
                 "/api/onboarding/register",
                 "/api/onboarding/verify-email",
-                "/api/admin/**",
                 "/actuator/**"
             )
 
@@ -32,4 +33,7 @@ class AuthWebMvcConfigurer(
     override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
         resolvers.add(MerchantPrincipalArgumentResolver())
     }
+
+    @Bean
+    fun passwordEncoder(): BCryptPasswordEncoder = BCryptPasswordEncoder()
 }

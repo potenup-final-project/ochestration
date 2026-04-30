@@ -2,6 +2,7 @@ package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.application.usecase.ApproveLiveUpgradeResult
 import com.pg.ochestration.application.usecase.ApproveLiveUpgradeUseCase
+import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.domain.model.MerchantStatus
 import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.PathVariable
@@ -30,6 +31,8 @@ class AdminMerchantController(
     private val approveLiveUpgradeUseCase: ApproveLiveUpgradeUseCase
 ) {
     @PostMapping("/{merchantId}/approve-live")
-    fun approveLive(@PathVariable merchantId: String): ApproveLiveResponse =
-        ApproveLiveResponse.from(approveLiveUpgradeUseCase.approve(merchantId))
+    fun approveLive(
+        @PathVariable merchantId: String,
+        principal: MerchantPrincipal
+    ): ApproveLiveResponse = ApproveLiveResponse.from(approveLiveUpgradeUseCase.approve(merchantId))
 }
