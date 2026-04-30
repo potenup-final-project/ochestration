@@ -134,3 +134,20 @@ CREATE TABLE IF NOT EXISTS provider_health
     PRIMARY KEY (provider)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS merchants
+(
+    merchant_id                     VARCHAR(36)  NOT NULL,
+    email                           VARCHAR(255) NOT NULL,
+    password_hash                   VARCHAR(255) NOT NULL,
+    business_name                   VARCHAR(255) NULL,
+    business_registration_number    VARCHAR(20)  NULL,
+    business_registration_file_url  VARCHAR(500) NULL,
+    status                          VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    created_at                      DATETIME(6)  NOT NULL,
+    updated_at                      DATETIME(6)  NOT NULL,
+    PRIMARY KEY (merchant_id),
+    UNIQUE INDEX uk_merchants_email (email),
+    INDEX idx_merchants_status (status)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
