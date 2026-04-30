@@ -18,11 +18,11 @@ import java.time.Instant
 @Component
 class DataSeeder(
     private val merchantRepository: MerchantRepository,
-    private val issueApiKeyUseCase: IssueApiKeyUseCase
+    private val issueApiKeyUseCase: IssueApiKeyUseCase,
+    private val passwordEncoder: BCryptPasswordEncoder
 ) : ApplicationRunner {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val passwordEncoder = BCryptPasswordEncoder()
 
     companion object {
         private const val SEED_MERCHANT_ID = "merchant-001"

@@ -23,15 +23,6 @@ enum class MerchantStatus {
             )
     }
 
-    fun ensureCanRequestLiveUpgrade(merchantId: String) {
-        if (this != SANDBOX_ACTIVE)
-            throw MerchantNotEligibleForLiveException(
-                merchantId = merchantId,
-                status = this,
-                reason = "SANDBOX_ACTIVE 상태에서만 Live 전환 신청이 가능합니다"
-            )
-    }
-
     fun isSandboxOnly(): Boolean = this == PENDING || this == SANDBOX_ACTIVE
 
     fun isLiveEligible(): Boolean = this == LIVE_ACTIVE
