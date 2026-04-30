@@ -53,6 +53,10 @@ class ProviderConnectionRepository(
         return queryDslRepository.getConnectionStatus(provider)
     }
 
+    fun countConnected(): Int {
+        return jpaRepository.findAll().count { it.status == ConnectionStatus.CONNECTED }
+    }
+
     private fun ensureExists(provider: Provider): ProviderConnectionJpaEntity {
         val created = ProviderConnectionJpaEntity(
             providerConnectionId = UUID.randomUUID().toString(),
