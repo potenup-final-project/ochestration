@@ -1,6 +1,8 @@
 spring:
   application:
     name: ochestration
+  main:
+    web-application-type: servlet
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
