@@ -2,12 +2,13 @@ package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.application.usecase.IssueApiKeyUseCase
 import com.pg.ochestration.application.usecase.RevokeApiKeyUseCase
+import com.pg.ochestration.domain.exception.InvalidOnboardingTokenException
 import com.pg.ochestration.domain.exception.MissingApiKeyException
+import com.pg.ochestration.infrastructure.auth.OnboardingTokenInterceptor
 import com.pg.ochestration.presentation.web.controller.request.IssueApiKeyRequest
 import com.pg.ochestration.presentation.web.controller.response.IssueApiKeyResponse
 import com.pg.ochestration.presentation.web.controller.response.RevokeApiKeyResponse
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.validation.Valid
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -26,8 +27,14 @@ class ApiKeyController(
     private val revokeApiKeyUseCase: RevokeApiKeyUseCase
 ) {
     @PostMapping
-    fun issueKey(@Valid @RequestBody request: IssueApiKeyRequest): ResponseEntity<IssueApiKeyResponse> {
-        val result = issueApiKeyUseCase.issue(request.toCommand())
+    fun issueKey(
+        @RequestBody request: IssueApiKeyRequest,
+        httpRequest: HttpServletRequest
+    ): ResponseEntity<IssueApiKeyResponse> {
+        val merchantId = httpRequest.getAttribute(OnboardingTokenInterceptor.ATTR_KEY) as? String
+            ?: throw InvalidOnboardingTokenException("온보딩 토큰 인증이 필요합니다")
+
+        val result = issueApiKeyUseCase.issue(request.toCommand(merchantId))
         return ResponseEntity.status(HttpStatus.CREATED).body(IssueApiKeyResponse.from(result))
     }
 
