@@ -12,6 +12,10 @@ import com.pg.ochestration.domain.exception.MerchantNotFoundException
 import com.pg.ochestration.domain.exception.OnboardingException
 import com.pg.ochestration.domain.exception.OnboardingTokenExpiredException
 import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
+import com.pg.ochestration.domain.exception.PaymentException
+import com.pg.ochestration.domain.exception.PaymentNotFoundException
+import com.pg.ochestration.domain.exception.PaymentNotCancelableException
+import com.pg.ochestration.domain.exception.PaymentNotFailableException
 import com.pg.ochestration.presentation.web.dto.ApiErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -66,6 +70,22 @@ class ApiExceptionHandler {
             ApiErrorResponse(
                 errorCode = ex.errorCode,
                 message = ex.message ?: "Onboarding error",
+                timestamp = Instant.now()
+            )
+        )
+    }
+
+    @ExceptionHandler(PaymentException::class)
+    fun handlePaymentException(ex: PaymentException): ResponseEntity<ApiErrorResponse> {
+        val status = when (ex) {
+            is PaymentNotFoundException -> HttpStatus.NOT_FOUND
+            is PaymentNotCancelableException -> HttpStatus.CONFLICT
+            is PaymentNotFailableException -> HttpStatus.CONFLICT
+        }
+        return ResponseEntity.status(status).body(
+            ApiErrorResponse(
+                errorCode = ex.errorCode,
+                message = ex.message ?: "Payment error",
                 timestamp = Instant.now()
             )
         )

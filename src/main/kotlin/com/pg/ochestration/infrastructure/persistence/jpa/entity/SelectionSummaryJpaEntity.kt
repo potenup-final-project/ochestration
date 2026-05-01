@@ -1,6 +1,8 @@
 package com.pg.ochestration.infrastructure.persistence.jpa.entity
 
+import com.pg.ochestration.domain.model.FallbackReasonCode
 import com.pg.ochestration.domain.model.Provider
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -27,8 +29,8 @@ class SelectionSummaryJpaEntity(
     val payment: PaymentJpaEntity,
 
     initialSelectedPrimaryProvider: Provider?,
-    initialSelectedPrimaryReason: String,
-    initialFallbackReason: String?,
+    initialSelectedPrimaryReason: SelectionPrimaryReason,
+    initialFallbackReasonCode: FallbackReasonCode?,
     initialFinalApprovedProvider: Provider?
 ) {
     @Enumerated(EnumType.STRING)
@@ -36,12 +38,14 @@ class SelectionSummaryJpaEntity(
     final var selectedPrimaryProvider: Provider? = initialSelectedPrimaryProvider
         private set
 
-    @Column(name = "selected_primary_reason", nullable = false, length = 500)
-    final var selectedPrimaryReason: String = initialSelectedPrimaryReason
+    @Enumerated(EnumType.STRING)
+    @Column(name = "selected_primary_reason", nullable = false, length = 100)
+    final var selectedPrimaryReason: SelectionPrimaryReason = initialSelectedPrimaryReason
         private set
 
-    @Column(name = "fallback_reason", nullable = true, length = 500)
-    final var fallbackReason: String? = initialFallbackReason
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fallback_reason_code", nullable = true, length = 100)
+    final var fallbackReasonCode: FallbackReasonCode? = initialFallbackReasonCode
         private set
 
     @Enumerated(EnumType.STRING)
@@ -71,15 +75,15 @@ class SelectionSummaryJpaEntity(
 
     fun syncSelectionData(
         selectedPrimaryProvider: Provider?,
-        selectedPrimaryReason: String,
-        fallbackReason: String?,
+        selectedPrimaryReason: SelectionPrimaryReason,
+        fallbackReasonCode: FallbackReasonCode?,
         finalApprovedProvider: Provider?,
         initialCandidates: List<SelectionInitialCandidateJpaEntity>,
         filteredOutProviders: List<SelectionFilteredOutProviderJpaEntity>
     ) {
         this.selectedPrimaryProvider = selectedPrimaryProvider
         this.selectedPrimaryReason = selectedPrimaryReason
-        this.fallbackReason = fallbackReason
+        this.fallbackReasonCode = fallbackReasonCode
         this.finalApprovedProvider = finalApprovedProvider
         _initialCandidates.clear()
         _initialCandidates.addAll(initialCandidates)

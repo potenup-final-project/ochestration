@@ -7,17 +7,18 @@ import com.pg.ochestration.application.port.out.GatewayCancelResult
 import com.pg.ochestration.application.port.out.GatewayFailure
 import com.pg.ochestration.application.port.out.GatewayPaymentQuery
 import com.pg.ochestration.application.port.out.GatewayPaymentResult
+import com.pg.ochestration.application.port.out.PaymentIdGeneratorPort
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.domain.model.AttemptResult
 import com.pg.ochestration.domain.model.FailureCategory
+import com.pg.ochestration.domain.model.FallbackReasonCode
 import com.pg.ochestration.domain.model.FilteredOutProvider
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
-import com.pg.ochestration.domain.model.SelectionSummary
+import com.pg.ochestration.domain.model.ProviderSelectionResult
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
-import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
-import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.util.UUID
@@ -101,7 +102,8 @@ class PgOrchestratorTest {
         assertEquals(PaymentStatus.FAILED, payment.status)
         assertEquals(1, payment.attempts.size)
         assertEquals(Provider.TOSS, payment.attempts.first().provider)
-        assertNotNull(payment.selectionSummary.fallbackReason)
+        assertNotNull(payment.selectionSummary.fallbackReasonCode)
+        assertEquals(FallbackReasonCode.NON_RETRYABLE_STOP, payment.selectionSummary.fallbackReasonCode)
         assertEquals("CARD_LIMIT_EXCEEDED", payment.failureCode)
     }
 
@@ -111,7 +113,8 @@ class PgOrchestratorTest {
     ): PgOrchestrator {
         val fakePolicy = FakeProviderSelectionPolicy(candidates)
         val fakeRepository = InMemoryPaymentRepository()
-        return PgOrchestrator(fakePolicy, gateways, fakeRepository)
+        val fakeIdGenerator = FixedPaymentIdGenerator()
+        return PgOrchestrator(fakeIdGenerator, fakePolicy, gateways, fakeRepository)
     }
 
     private fun technicalFailure(): GatewayApproveResult =
@@ -166,11 +169,14 @@ class PgOrchestratorTest {
 // -------------------------------------------------------------------------
 // 테스트 스텁 — Spring 컨텍스트 불필요.
 // allOpen 플러그인이 @Component/@Repository/@Service 클래스를 서브클래싱 가능하게 열어줌.
-// 오버라이드된 메서드는 super를 호출하지 않으므로 생성자 인자를 null로 넘겨도 런타임에 필드 접근이 발생하지 않음.
 // -------------------------------------------------------------------------
 
 @Suppress("UNCHECKED_CAST")
 private fun <T> nullStub(): T = null as T
+
+private class FixedPaymentIdGenerator : PaymentIdGeneratorPort {
+    override fun generate(): String = UUID.randomUUID().toString()
+}
 
 private class FakeProviderSelectionPolicy(
     private val candidates: List<Provider>
@@ -185,7 +191,7 @@ private class FakeProviderSelectionPolicy(
             filteredOutProviders = emptyList<FilteredOutProvider>(),
             candidates = candidates,
             selectedPrimaryProvider = candidates.firstOrNull(),
-            selectedPrimaryReason = "fixed by test stub"
+            selectedPrimaryReason = SelectionPrimaryReason.HIGHEST_PRIORITY_DEFAULT
         )
 }
 
@@ -196,8 +202,6 @@ private class InMemoryPaymentRepository : PaymentRepository(
     objectMapper = nullStub()
 ) {
     private val store = ConcurrentHashMap<String, Payment>()
-
-    override fun nextPaymentId(): String = UUID.randomUUID().toString()
 
     override fun save(payment: Payment): Payment {
         store[payment.paymentId] = payment

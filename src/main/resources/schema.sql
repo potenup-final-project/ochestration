@@ -48,12 +48,12 @@ CREATE TABLE IF NOT EXISTS payment_attempts
 
 CREATE TABLE IF NOT EXISTS payment_selection_summaries
 (
-    id                       BIGINT       NOT NULL AUTO_INCREMENT,
-    payment_id               VARCHAR(36)  NOT NULL,
+    id                        BIGINT       NOT NULL AUTO_INCREMENT,
+    payment_id                VARCHAR(36)  NOT NULL,
     selected_primary_provider VARCHAR(50)  NULL,
-    selected_primary_reason  VARCHAR(500) NOT NULL,
-    fallback_reason          VARCHAR(500) NULL,
-    final_approved_provider  VARCHAR(50)  NULL,
+    selected_primary_reason   VARCHAR(100) NOT NULL,
+    fallback_reason_code      VARCHAR(100) NULL,
+    final_approved_provider   VARCHAR(50)  NULL,
     PRIMARY KEY (id),
     UNIQUE INDEX uq_payment_selection_summaries_payment_id (payment_id),
     CONSTRAINT fk_payment_selection_summaries_payment
@@ -64,10 +64,10 @@ CREATE TABLE IF NOT EXISTS payment_selection_summaries
 
 CREATE TABLE IF NOT EXISTS payment_selection_initial_candidates
 (
-    id                  BIGINT      NOT NULL AUTO_INCREMENT,
+    id                   BIGINT      NOT NULL AUTO_INCREMENT,
     selection_summary_id BIGINT      NOT NULL,
-    provider            VARCHAR(50) NOT NULL,
-    sort_order          INT         NOT NULL,
+    provider             VARCHAR(50) NOT NULL,
+    sort_order           INT         NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_selection_initial_candidates_summary_id (selection_summary_id),
     CONSTRAINT fk_selection_initial_candidates_summary
@@ -78,10 +78,10 @@ CREATE TABLE IF NOT EXISTS payment_selection_initial_candidates
 
 CREATE TABLE IF NOT EXISTS payment_selection_filtered_out_providers
 (
-    id                  BIGINT      NOT NULL AUTO_INCREMENT,
+    id                   BIGINT      NOT NULL AUTO_INCREMENT,
     selection_summary_id BIGINT      NOT NULL,
-    provider            VARCHAR(50) NOT NULL,
-    reason              VARCHAR(50) NOT NULL,
+    provider             VARCHAR(50) NOT NULL,
+    reason               VARCHAR(50) NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_selection_filtered_out_summary_id (selection_summary_id),
     CONSTRAINT fk_selection_filtered_out_summary
@@ -137,15 +137,15 @@ CREATE TABLE IF NOT EXISTS provider_health
 
 CREATE TABLE IF NOT EXISTS merchants
 (
-    merchant_id                     VARCHAR(36)  NOT NULL,
-    email                           VARCHAR(255) NOT NULL,
-    password_hash                   VARCHAR(255) NOT NULL,
-    business_name                   VARCHAR(255) NULL,
-    business_registration_number    VARCHAR(20)  NULL,
-    business_registration_file_url  VARCHAR(500) NULL,
-    status                          VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
-    created_at                      DATETIME(6)  NOT NULL,
-    updated_at                      DATETIME(6)  NOT NULL,
+    merchant_id                    VARCHAR(36)  NOT NULL,
+    email                          VARCHAR(255) NOT NULL,
+    password_hash                  VARCHAR(255) NOT NULL,
+    business_name                  VARCHAR(255) NULL,
+    business_registration_number   VARCHAR(20)  NULL,
+    business_registration_file_url VARCHAR(500) NULL,
+    status                         VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    created_at                     DATETIME(6)  NOT NULL,
+    updated_at                     DATETIME(6)  NOT NULL,
     PRIMARY KEY (merchant_id),
     UNIQUE INDEX uk_merchants_email (email),
     INDEX idx_merchants_status (status)
