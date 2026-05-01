@@ -2,6 +2,7 @@ package com.pg.ochestration.infrastructure.auth
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.pg.ochestration.application.port.out.ApiKeyCachePort
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
@@ -9,7 +10,7 @@ import java.util.concurrent.TimeUnit
 @Component
 class ApiKeyCache(
     @Value("\${auth.api-key.cache-ttl-seconds:60}") ttlSeconds: Long
-) {
+) : ApiKeyCachePort {
     private val store: Cache<String, MerchantPrincipal> = Caffeine.newBuilder()
         .expireAfterWrite(ttlSeconds, TimeUnit.SECONDS)
         .build()
@@ -18,5 +19,5 @@ class ApiKeyCache(
 
     fun put(keyHash: String, principal: MerchantPrincipal) = store.put(keyHash, principal)
 
-    fun evict(keyHash: String) = store.invalidate(keyHash)
+    override fun evict(keyHash: String) = store.invalidate(keyHash)
 }

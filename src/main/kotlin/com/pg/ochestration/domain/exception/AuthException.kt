@@ -31,3 +31,9 @@ class EnvironmentMismatchException(keyEnv: ApiKeyEnvironment, requestEnv: ApiKey
         "'$keyEnv' 환경의 API Key는 '$requestEnv' 환경에서 사용할 수 없습니다",
         "ENVIRONMENT_MISMATCH"
     )
+
+class PaymentAccessDeniedException(paymentId: String, merchantId: String)
+    : AuthException(
+        "가맹점 '$merchantId'는 결제 '$paymentId'에 접근 권한이 없습니다",
+        "PAYMENT_ACCESS_DENIED"
+    )

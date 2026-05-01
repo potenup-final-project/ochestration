@@ -57,7 +57,7 @@ class ProviderConnectionRepository(
         val created = ProviderConnectionJpaEntity(
             providerConnectionId = UUID.randomUUID().toString(),
             provider = provider,
-            initialMerchantId = "merchant-001",
+            initialMerchantId = "system",
             initialDisplayName = provider.name,
             initialStatus = ConnectionStatus.DISCONNECTED
         )
