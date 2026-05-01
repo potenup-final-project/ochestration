@@ -12,6 +12,7 @@ import com.pg.ochestration.infrastructure.persistence.jpa.entity.PaymentJpaEntit
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.SelectionFilteredOutProviderJpaEntity
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.SelectionInitialCandidateJpaEntity
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.SelectionSummaryJpaEntity
+import com.pg.ochestration.application.port.out.PaymentSavePort
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -22,11 +23,11 @@ class PaymentRepository(
     private val selectionSummaryJpaRepository: SelectionSummaryJpaRepository,
     private val queryDslRepository: PaymentQueryDslRepository,
     private val objectMapper: ObjectMapper
-) {
+) : PaymentSavePort {
     fun nextPaymentId(): String = UUID.randomUUID().toString()
 
     @Transactional
-    fun save(payment: Payment): Payment {
+    override fun save(payment: Payment): Payment {
         val entity = toPaymentEntity(payment)
         val saved = jpaRepository.save(entity)
         val summary = toSummaryEntity(saved, payment)
@@ -34,7 +35,7 @@ class PaymentRepository(
         return toDomain(saved, savedSummary)
     }
 
-    fun findById(paymentId: String): Payment? {
+    override fun findById(paymentId: String): Payment? {
         val entity = queryDslRepository.findByPaymentId(paymentId) ?: return null
         val summary = selectionSummaryJpaRepository.findByPaymentPaymentId(paymentId)
         return toDomain(entity, summary)

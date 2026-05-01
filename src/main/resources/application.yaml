@@ -33,3 +33,9 @@ auth:
     pepper: ${AUTH_API_KEY_PEPPER}
     enabled: ${AUTH_API_KEY_ENABLED:true}
     grace-period-hours: 24
+
+onboarding:
+  email-token:
+    ttl-minutes: 30
+  onboarding-token:
+    ttl-minutes: 10

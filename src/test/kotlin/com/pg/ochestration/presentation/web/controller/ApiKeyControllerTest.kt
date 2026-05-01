@@ -5,11 +5,13 @@ import com.pg.ochestration.application.usecase.IssueApiKeyResult
 import com.pg.ochestration.application.usecase.IssueApiKeyUseCase
 import com.pg.ochestration.application.usecase.RevokeApiKeyUseCase
 import com.pg.ochestration.domain.exception.InvalidApiKeyStateException
+import com.pg.ochestration.domain.exception.InvalidOnboardingTokenException
 import com.pg.ochestration.domain.exception.MissingApiKeyException
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.ApiKeyScope
 import com.pg.ochestration.domain.model.ApiKeyStatus
 import com.pg.ochestration.domain.model.MerchantApiKey
+import com.pg.ochestration.infrastructure.auth.OnboardingTokenInterceptor
 import com.pg.ochestration.presentation.web.controller.request.IssueApiKeyRequest
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -32,21 +34,21 @@ class ApiKeyControllerTest {
     )
 
     // -------------------------------------------------------------------------
-    // POST /api/auth/keys — 발급
+    // POST /api/auth/keys — 발급 (온보딩 토큰 기반)
     // -------------------------------------------------------------------------
 
     @Test
-    fun `should return 201 with rawKey when issueKey succeeds`() {
-        val request = IssueApiKeyRequest(
-            merchantId = "merchant-001",
-            environment = ApiKeyEnvironment.SANDBOX,
-            description = null
-        )
+    fun `온보딩 토큰 attribute가 있을 때 201과 rawKey를 반환한다`() {
+        val merchantId = "merchant-001"
+        val request = IssueApiKeyRequest(environment = ApiKeyEnvironment.SANDBOX, description = null)
+        val httpRequest = MockHttpServletRequest().apply {
+            setAttribute(OnboardingTokenInterceptor.ATTR_KEY, merchantId)
+        }
         val issuedKey = anApiKey(status = ApiKeyStatus.ACTIVE)
         val result = IssueApiKeyResult(apiKey = issuedKey, rawKey = RAW_KEY)
-        `when`(issueUseCase.issue(request.toCommand())).thenReturn(result)
+        `when`(issueUseCase.issue(IssueApiKeyCommand(merchantId, ApiKeyEnvironment.SANDBOX, null))).thenReturn(result)
 
-        val response = controller.issueKey(request)
+        val response = controller.issueKey(request, httpRequest)
 
         assertEquals(HttpStatus.CREATED, response.statusCode)
         assertNotNull(response.body)
@@ -56,33 +58,44 @@ class ApiKeyControllerTest {
     }
 
     @Test
-    fun `should include keyPrefix and environment in response when issueKey succeeds`() {
-        val request = IssueApiKeyRequest(
-            merchantId = "merchant-001",
-            environment = ApiKeyEnvironment.SANDBOX,
-            description = "테스트 Key"
-        )
+    fun `keyPrefix와 environment가 응답에 포함된다`() {
+        val merchantId = "merchant-001"
+        val request = IssueApiKeyRequest(environment = ApiKeyEnvironment.SANDBOX, description = "테스트 Key")
+        val httpRequest = MockHttpServletRequest().apply {
+            setAttribute(OnboardingTokenInterceptor.ATTR_KEY, merchantId)
+        }
         val issuedKey = anApiKey(environment = ApiKeyEnvironment.SANDBOX)
         val result = IssueApiKeyResult(apiKey = issuedKey, rawKey = RAW_KEY)
-        `when`(issueUseCase.issue(request.toCommand())).thenReturn(result)
+        `when`(issueUseCase.issue(IssueApiKeyCommand(merchantId, ApiKeyEnvironment.SANDBOX, "테스트 Key"))).thenReturn(result)
 
-        val response = controller.issueKey(request)
+        val response = controller.issueKey(request, httpRequest)
 
         assertEquals(issuedKey.keyPrefix, response.body!!.keyPrefix)
         assertEquals(ApiKeyEnvironment.SANDBOX, response.body!!.environment)
     }
 
     @Test
-    fun `should propagate exception from IssueApiKeyUseCase when issue fails`() {
-        val request = IssueApiKeyRequest(
-            merchantId = "merchant-001",
-            environment = ApiKeyEnvironment.SANDBOX,
-            description = null
-        )
-        `when`(issueUseCase.issue(request.toCommand())).thenThrow(RuntimeException("발급 실패"))
+    fun `온보딩 토큰 attribute가 없으면 InvalidOnboardingTokenException 발생`() {
+        val request = IssueApiKeyRequest(environment = ApiKeyEnvironment.SANDBOX, description = null)
+        val httpRequest = MockHttpServletRequest() // attribute 없음
+
+        assertFailsWith<InvalidOnboardingTokenException> {
+            controller.issueKey(request, httpRequest)
+        }
+    }
+
+    @Test
+    fun `IssueApiKeyUseCase에서 예외 발생 시 그대로 전파된다`() {
+        val merchantId = "merchant-001"
+        val request = IssueApiKeyRequest(environment = ApiKeyEnvironment.SANDBOX, description = null)
+        val httpRequest = MockHttpServletRequest().apply {
+            setAttribute(OnboardingTokenInterceptor.ATTR_KEY, merchantId)
+        }
+        `when`(issueUseCase.issue(IssueApiKeyCommand(merchantId, ApiKeyEnvironment.SANDBOX, null)))
+            .thenThrow(RuntimeException("발급 실패"))
 
         assertFailsWith<RuntimeException> {
-            controller.issueKey(request)
+            controller.issueKey(request, httpRequest)
         }
     }
 
@@ -91,7 +104,7 @@ class ApiKeyControllerTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `should return REVOKED key response when valid X-Api-Key header is present`() {
+    fun `유효한 X-Api-Key 헤더가 있을 때 폐기된 Key 응답을 반환한다`() {
         val revokedKey = anApiKey(keyId = "key-001", status = ApiKeyStatus.REVOKED, revokedAt = Instant.now())
         val httpRequest = MockHttpServletRequest().apply { addHeader("X-Api-Key", RAW_KEY) }
         `when`(revokeUseCase.revoke(keyId = "key-001", rawKey = RAW_KEY)).thenReturn(revokedKey)
@@ -104,7 +117,7 @@ class ApiKeyControllerTest {
     }
 
     @Test
-    fun `should throw MissingApiKeyException when X-Api-Key header is absent`() {
+    fun `X-Api-Key 헤더가 없으면 MissingApiKeyException 발생`() {
         val httpRequest = MockHttpServletRequest()
 
         assertFailsWith<MissingApiKeyException> {
@@ -113,7 +126,7 @@ class ApiKeyControllerTest {
     }
 
     @Test
-    fun `should propagate InvalidApiKeyStateException when key is already REVOKED`() {
+    fun `이미 폐기된 Key 폐기 시 InvalidApiKeyStateException 전파`() {
         val httpRequest = MockHttpServletRequest().apply { addHeader("X-Api-Key", RAW_KEY) }
         `when`(revokeUseCase.revoke(keyId = "key-001", rawKey = RAW_KEY))
             .thenThrow(InvalidApiKeyStateException("key-001", ApiKeyStatus.REVOKED))

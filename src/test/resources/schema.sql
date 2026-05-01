@@ -15,3 +15,17 @@ CREATE TABLE IF NOT EXISTS merchant_api_keys (
     PRIMARY KEY (key_id),
     UNIQUE (key_hash)
 );
+
+CREATE TABLE IF NOT EXISTS merchants (
+    merchant_id                     VARCHAR(36)  NOT NULL,
+    email                           VARCHAR(255) NOT NULL,
+    password_hash                   VARCHAR(255) NOT NULL,
+    business_name                   VARCHAR(255),
+    business_registration_number    VARCHAR(20),
+    business_registration_file_url  VARCHAR(500),
+    status                          VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    created_at                      TIMESTAMP    NOT NULL,
+    updated_at                      TIMESTAMP    NOT NULL,
+    PRIMARY KEY (merchant_id),
+    UNIQUE (email)
+);
