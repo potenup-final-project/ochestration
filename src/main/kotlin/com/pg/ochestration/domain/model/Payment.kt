@@ -1,8 +1,9 @@
 package com.pg.ochestration.domain.model
 
+import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
 import java.time.Instant
 
-data class Payment(
+class Payment(
     val paymentId: String,
     val merchantId: String,
     val orderId: String,
@@ -22,4 +23,76 @@ data class Payment(
     val selectionSummary: SelectionSummary,
     val metadata: Map<String, String> = emptyMap(),
     val cancelReason: String? = null
-)
+) {
+    fun ensureOwnedBy(requestingMerchantId: String) {
+        if (this.merchantId != requestingMerchantId)
+            throw PaymentAccessDeniedException(paymentId, requestingMerchantId)
+    }
+
+    fun ensureCancelable() = status.ensureCancelable(paymentId)
+
+    fun markCanceled(
+        canceledAt: Instant,
+        reason: String,
+        failure: PaymentFailure? = null
+    ): Payment {
+        ensureCancelable()
+        return Payment(
+            paymentId = paymentId,
+            merchantId = merchantId,
+            orderId = orderId,
+            amount = amount,
+            currency = currency,
+            idempotencyKey = idempotencyKey,
+            requestedAt = requestedAt,
+            status = PaymentStatus.CANCELED,
+            approvedProvider = approvedProvider,
+            providerTxId = providerTxId,
+            approvedAt = approvedAt,
+            canceledAt = canceledAt,
+            failureCode = failure?.code,
+            failureCategory = failure?.category,
+            failureMessage = failure?.message,
+            attempts = attempts,
+            selectionSummary = selectionSummary,
+            metadata = metadata,
+            cancelReason = reason
+        )
+    }
+
+    fun markFailed(failure: PaymentFailure?): Payment {
+        status.ensureCanFail(paymentId)
+        return Payment(
+            paymentId = paymentId,
+            merchantId = merchantId,
+            orderId = orderId,
+            amount = amount,
+            currency = currency,
+            idempotencyKey = idempotencyKey,
+            requestedAt = requestedAt,
+            status = PaymentStatus.FAILED,
+            approvedProvider = approvedProvider,
+            providerTxId = providerTxId,
+            approvedAt = approvedAt,
+            canceledAt = canceledAt,
+            failureCode = failure?.code,
+            failureCategory = failure?.category,
+            failureMessage = failure?.message,
+            attempts = attempts,
+            selectionSummary = selectionSummary,
+            metadata = metadata,
+            cancelReason = cancelReason
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Payment) return false
+        return paymentId == other.paymentId
+    }
+
+    override fun hashCode(): Int = paymentId.hashCode()
+
+    override fun toString(): String =
+        "Payment(paymentId=$paymentId, merchantId=$merchantId, status=$status, amount=$amount)"
+}

@@ -1,10 +1,11 @@
 package com.pg.ochestration.presentation.web.controller
 
+import com.pg.ochestration.application.service.UnifiedPaymentService
+import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.presentation.web.dto.PaymentApproveRequest
 import com.pg.ochestration.presentation.web.dto.PaymentCancelRequest
 import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
 import com.pg.ochestration.presentation.web.dto.PaymentView
-import com.pg.ochestration.application.service.UnifiedPaymentService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -17,12 +18,13 @@ import org.springframework.web.bind.annotation.RestController
 class PaymentController(
     private val unifiedPaymentService: UnifiedPaymentService
 ) {
-    private val merchantId = "merchant-001"
-
     @PostMapping("/approve")
-    suspend fun approve(@RequestBody request: PaymentApproveRequest): PaymentView {
+    suspend fun approve(
+        @RequestBody request: PaymentApproveRequest,
+        principal: MerchantPrincipal
+    ): PaymentView {
         val payment = unifiedPaymentService.approve(
-            merchantId = merchantId,
+            principal = principal,
             orderId = request.orderId,
             amount = request.amount,
             currency = request.currency,
@@ -35,20 +37,23 @@ class PaymentController(
     }
 
     @GetMapping("/{paymentId}")
-    suspend fun getPayment(@PathVariable paymentId: String): PaymentView {
-        return PaymentView.from(unifiedPaymentService.getPayment(paymentId))
-    }
+    suspend fun getPayment(
+        @PathVariable paymentId: String,
+        principal: MerchantPrincipal
+    ): PaymentView =
+        PaymentView.from(unifiedPaymentService.getPayment(principal.merchantId, paymentId))
 
     @PostMapping("/{paymentId}/cancel")
     suspend fun cancel(
         @PathVariable paymentId: String,
-        @RequestBody request: PaymentCancelRequest
-    ): PaymentCancelResponse {
-        return unifiedPaymentService.cancel(
+        @RequestBody request: PaymentCancelRequest,
+        principal: MerchantPrincipal
+    ): PaymentCancelResponse =
+        unifiedPaymentService.cancel(
+            principal = principal,
             paymentId = paymentId,
             reason = request.reason,
             idempotencyKey = request.idempotencyKey,
             requestedAt = request.requestedAt
         )
-    }
 }

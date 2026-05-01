@@ -1,6 +1,22 @@
 spring:
   application:
     name: ochestration
+  main:
+    web-application-type: servlet
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+  sql:
+    init:
+      mode: never
 
 server:
   port: ${SERVER_PORT}
@@ -11,3 +27,15 @@ gateway:
     secret-key: ${TOSS_TEST_SECRET_KEY}
     connect-timeout-ms: ${PG_CONNECT_TIMEOUT_MS}
     read-timeout-ms: ${PG_READ_TIMEOUT_MS}
+
+auth:
+  api-key:
+    pepper: ${AUTH_API_KEY_PEPPER}
+    enabled: ${AUTH_API_KEY_ENABLED:true}
+    grace-period-hours: 24
+
+onboarding:
+  email-token:
+    ttl-minutes: 30
+  onboarding-token:
+    ttl-minutes: 10

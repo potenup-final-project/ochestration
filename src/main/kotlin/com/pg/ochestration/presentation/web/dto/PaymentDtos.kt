@@ -1,5 +1,6 @@
 package com.pg.ochestration.presentation.web.dto
 
+import com.pg.ochestration.application.port.out.GatewayCancelResult
 import com.pg.ochestration.domain.model.FailureCategory
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentAttempt
@@ -38,10 +39,32 @@ data class PaymentCancelResponse(
     val canceledAt: Instant?,
     val failure: PaymentFailureView? = null,
     val metadata: Map<String, String> = emptyMap()
-)
+) {
+    companion object {
+        fun from(payment: Payment, cancelResult: GatewayCancelResult): PaymentCancelResponse =
+            PaymentCancelResponse(
+                paymentId = payment.paymentId,
+                success = cancelResult.success,
+                status = cancelResult.status,
+                provider = requireNotNull(payment.approvedProvider) {
+                    "취소 응답 생성 실패: approvedProvider가 없습니다 — paymentId=${payment.paymentId}"
+                },
+                providerTxId = requireNotNull(payment.providerTxId) {
+                    "취소 응답 생성 실패: providerTxId가 없습니다 — paymentId=${payment.paymentId}"
+                },
+                canceledAt = cancelResult.canceledAt,
+                failure = cancelResult.failure?.let {
+                    PaymentFailureView(code = it.code, category = it.category, message = it.message)
+                },
+                metadata = cancelResult.metadata
+            )
+    }
+}
 
 data class ApiErrorResponse(
-    val message: String
+    val errorCode: String,
+    val message: String,
+    val timestamp: Instant = Instant.now()
 )
 
 data class PaymentView(
@@ -65,8 +88,8 @@ data class PaymentView(
     val attempts: List<PaymentAttempt>
 ) {
     companion object {
-        fun from(payment: Payment): PaymentView {
-            return PaymentView(
+        fun from(payment: Payment): PaymentView =
+            PaymentView(
                 paymentId = payment.paymentId,
                 merchantId = payment.merchantId,
                 orderId = payment.orderId,
@@ -94,6 +117,5 @@ data class PaymentView(
                 selectionSummary = payment.selectionSummary,
                 attempts = payment.attempts
             )
-        }
     }
 }

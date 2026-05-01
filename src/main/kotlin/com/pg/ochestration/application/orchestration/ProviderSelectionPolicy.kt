@@ -1,23 +1,17 @@
 package com.pg.ochestration.application.orchestration
 
-import com.pg.ochestration.domain.service.ProviderCapabilityRegistry
-import com.pg.ochestration.domain.model.ConnectionStatus
 import com.pg.ochestration.domain.model.FilteredOutProvider
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.ProviderFilteredOutReason
+import com.pg.ochestration.domain.model.ProviderSelectionResult
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
+import com.pg.ochestration.domain.service.ProviderCapabilityRegistry
+import com.pg.ochestration.domain.model.ConnectionStatus
 import com.pg.ochestration.domain.model.ProviderHealthStatus
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderConnectionRepository
-import com.pg.ochestration.infrastructure.persistence.memory.ProviderHealthRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
+import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-
-data class ProviderSelectionResult(
-    val initialCandidates: List<Provider>,
-    val filteredOutProviders: List<FilteredOutProvider>,
-    val candidates: List<Provider>,
-    val selectedPrimaryProvider: Provider?,
-    val selectedPrimaryReason: String
-)
 
 @Component
 class ProviderSelectionPolicy(
@@ -60,16 +54,16 @@ class ProviderSelectionPolicy(
         val selectedPrimary = candidates.firstOrNull()
         val selectedReason = when {
             selectedPrimary != null && preferredPrimaryProvider != null && selectedPrimary == preferredPrimaryProvider ->
-                "User selected preferred primary provider"
+                SelectionPrimaryReason.USER_PREFERRED
 
             selectedPrimary != null && preferredPrimaryProvider != null ->
-                "Preferred primary provider excluded, selected next available provider by priority"
+                SelectionPrimaryReason.USER_PREFERRED_EXCLUDED_FALLBACK
 
             selectedPrimary != null ->
-                "Highest priority among connected healthy providers"
+                SelectionPrimaryReason.HIGHEST_PRIORITY_DEFAULT
 
             else ->
-                "No eligible provider after filtering"
+                SelectionPrimaryReason.NO_ELIGIBLE_PROVIDER
         }
 
         logger.info("[Selection] selectedPrimaryProvider={} reason={}", selectedPrimary, selectedReason)
