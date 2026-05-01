@@ -3,9 +3,12 @@ package com.pg.ochestration.presentation.web.controller
 import com.pg.ochestration.domain.exception.EnvironmentMismatchException
 import com.pg.ochestration.domain.exception.ExpiredApiKeyException
 import com.pg.ochestration.domain.exception.InvalidApiKeyException
+import com.pg.ochestration.domain.exception.InvalidApiKeyStateException
 import com.pg.ochestration.domain.exception.MissingApiKeyException
+import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
 import com.pg.ochestration.domain.exception.RevokedApiKeyException
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
+import com.pg.ochestration.domain.model.ApiKeyStatus
 import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,6 +79,29 @@ class ApiExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertEquals("INVALID_STATE", response.body?.errorCode)
         assertEquals("invalid state transition", response.body?.message)
+    }
+
+    @Test
+    fun `should return 403 with PAYMENT_ACCESS_DENIED errorCode for PaymentAccessDeniedException`() {
+        val exception = PaymentAccessDeniedException(
+            paymentId = "payment-001",
+            merchantId = "merchant-002"
+        )
+
+        val response = handler.handleAuthException(exception)
+
+        assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+        assertEquals("PAYMENT_ACCESS_DENIED", response.body?.errorCode)
+    }
+
+    @Test
+    fun `should return 409 with INVALID_API_KEY_STATE errorCode for InvalidApiKeyStateException`() {
+        val exception = InvalidApiKeyStateException("key-001", ApiKeyStatus.REVOKED)
+
+        val response = handler.handleAuthException(exception)
+
+        assertEquals(HttpStatus.CONFLICT, response.statusCode)
+        assertEquals("INVALID_API_KEY_STATE", response.body?.errorCode)
     }
 
     @Test

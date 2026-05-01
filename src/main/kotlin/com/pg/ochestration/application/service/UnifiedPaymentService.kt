@@ -43,19 +43,23 @@ class UnifiedPaymentService(
         )
     }
 
-    suspend fun getPayment(paymentId: String): Payment {
-        return paymentRepository.findById(paymentId)
-            ?: throw IllegalArgumentException("Payment not found: $paymentId")
+    suspend fun getPayment(merchantId: String, paymentId: String): Payment {
+        val payment = paymentRepository.findById(paymentId)
+            ?: throw IllegalArgumentException("결제를 찾을 수 없습니다: $paymentId")
+        payment.ensureOwnedBy(merchantId)
+        return payment
     }
 
     suspend fun cancel(
+        merchantId: String,
         paymentId: String,
         reason: String,
         idempotencyKey: String?,
         requestedAt: Instant?
     ): PaymentCancelResponse {
         val payment = paymentRepository.findById(paymentId)
-            ?: throw IllegalArgumentException("Payment not found: $paymentId")
+            ?: throw IllegalArgumentException("결제를 찾을 수 없습니다: $paymentId")
+        payment.ensureOwnedBy(merchantId)
 
         val approvedProvider = payment.approvedProvider
             ?: throw IllegalStateException("Payment cannot be canceled because approvedProvider is null")

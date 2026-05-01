@@ -104,6 +104,28 @@ CREATE TABLE IF NOT EXISTS provider_connections
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+CREATE TABLE IF NOT EXISTS merchant_api_keys
+(
+    key_id           VARCHAR(36)  NOT NULL,
+    merchant_id      VARCHAR(100) NOT NULL,
+    key_hash         VARCHAR(64)  NOT NULL,
+    key_prefix       VARCHAR(20)  NOT NULL,
+    environment      VARCHAR(10)  NOT NULL,
+    status           VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+    scopes           VARCHAR(500) NOT NULL DEFAULT 'PAYMENT_WRITE,PAYMENT_READ',
+    description      VARCHAR(255) NULL,
+    expired_at       DATETIME(6)  NULL,
+    grace_expired_at DATETIME(6)  NULL,
+    revoked_at       DATETIME(6)  NULL,
+    created_at       DATETIME(6)  NOT NULL,
+    last_used_at     DATETIME(6)  NULL,
+    PRIMARY KEY (key_id),
+    UNIQUE INDEX uk_key_hash (key_hash),
+    INDEX idx_merchant_status (merchant_id, status),
+    INDEX idx_merchant_env_status (merchant_id, environment, status)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
 CREATE TABLE IF NOT EXISTS provider_health
 (
     provider      VARCHAR(50) NOT NULL,
