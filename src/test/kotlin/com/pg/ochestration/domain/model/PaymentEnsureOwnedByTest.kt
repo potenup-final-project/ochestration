@@ -57,7 +57,14 @@ private fun aPayment(
     failureCategory = null,
     failureMessage = null,
     attempts = emptyList(),
-    selectionSummary = SelectionSummary.sandbox(),
+    selectionSummary = SelectionSummary(
+        initialCandidates = listOf(Provider.TOSS),
+        filteredOutProviders = emptyList(),
+        selectedPrimaryProvider = Provider.TOSS,
+        selectedPrimaryReason = "preferred",
+        fallbackReason = null,
+        finalApprovedProvider = Provider.TOSS
+    ),
     metadata = emptyMap(),
     cancelReason = null
 )

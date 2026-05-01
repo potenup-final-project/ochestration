@@ -48,7 +48,7 @@ class SandboxPaymentSimulator(
                 failureCategory = FailureCategory.NON_RETRYABLE_BUSINESS,
                 failureMessage = "Sandbox 강제 실패 (orderId에 'fail' 포함)",
                 attempts = emptyList(),
-                selectionSummary = SelectionSummary.sandbox(),
+                selectionSummary = sandboxSelectionSummary(),
                 metadata = command.metadata
             )
         } else {
@@ -73,7 +73,7 @@ class SandboxPaymentSimulator(
                 failureCategory = null,
                 failureMessage = null,
                 attempts = emptyList(),
-                selectionSummary = SelectionSummary.sandbox(),
+                selectionSummary = sandboxSelectionSummary(),
                 metadata = command.metadata
             )
         }
@@ -83,10 +83,20 @@ class SandboxPaymentSimulator(
 
     fun simulateCancel(payment: Payment): Payment {
         log.info("Sandbox 취소 성공 시뮬레이션 — paymentId={}", payment.paymentId)
-        val canceled = payment.markCanceled(
+        val canceled = payment.copy(
+            status = PaymentStatus.CANCELED,
             canceledAt = Instant.now(),
-            reason = "Sandbox 취소"
+            cancelReason = "Sandbox 취소"
         )
         return paymentSavePort.save(canceled)
     }
+
+    private fun sandboxSelectionSummary(): SelectionSummary = SelectionSummary(
+        initialCandidates = emptyList(),
+        filteredOutProviders = emptyList(),
+        selectedPrimaryProvider = Provider.TOSS,
+        selectedPrimaryReason = "Sandbox 시뮬레이션",
+        fallbackReason = null,
+        finalApprovedProvider = Provider.TOSS
+    )
 }

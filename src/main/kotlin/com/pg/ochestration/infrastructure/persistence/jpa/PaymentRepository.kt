@@ -6,7 +6,6 @@ import com.pg.ochestration.domain.model.FilteredOutProvider
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentAttempt
 import com.pg.ochestration.domain.model.PaymentStatus
-import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import com.pg.ochestration.domain.model.SelectionSummary
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.PaymentAttemptJpaEntity
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.PaymentJpaEntity
@@ -16,6 +15,7 @@ import com.pg.ochestration.infrastructure.persistence.jpa.entity.SelectionSummar
 import com.pg.ochestration.application.port.out.PaymentSavePort
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Repository
 class PaymentRepository(
@@ -24,6 +24,7 @@ class PaymentRepository(
     private val queryDslRepository: PaymentQueryDslRepository,
     private val objectMapper: ObjectMapper
 ) : PaymentSavePort {
+    fun nextPaymentId(): String = UUID.randomUUID().toString()
 
     @Transactional
     override fun save(payment: Payment): Payment {
@@ -110,7 +111,7 @@ class PaymentRepository(
                 payment = entity,
                 initialSelectedPrimaryProvider = payment.selectionSummary.selectedPrimaryProvider,
                 initialSelectedPrimaryReason = payment.selectionSummary.selectedPrimaryReason,
-                initialFallbackReasonCode = payment.selectionSummary.fallbackReasonCode,
+                initialFallbackReason = payment.selectionSummary.fallbackReason,
                 initialFinalApprovedProvider = payment.selectionSummary.finalApprovedProvider
             )
 
@@ -123,7 +124,7 @@ class PaymentRepository(
         summary.syncSelectionData(
             selectedPrimaryProvider = payment.selectionSummary.selectedPrimaryProvider,
             selectedPrimaryReason = payment.selectionSummary.selectedPrimaryReason,
-            fallbackReasonCode = payment.selectionSummary.fallbackReasonCode,
+            fallbackReason = payment.selectionSummary.fallbackReason,
             finalApprovedProvider = payment.selectionSummary.finalApprovedProvider,
             initialCandidates = newInitialCandidates,
             filteredOutProviders = newFilteredOutProviders
@@ -142,8 +143,8 @@ class PaymentRepository(
                 ?.map { FilteredOutProvider(it.provider, it.reason) }
                 ?: emptyList(),
             selectedPrimaryProvider = summary?.selectedPrimaryProvider,
-            selectedPrimaryReason = summary?.selectedPrimaryReason ?: SelectionPrimaryReason.NO_ELIGIBLE_PROVIDER,
-            fallbackReasonCode = summary?.fallbackReasonCode,
+            selectedPrimaryReason = summary?.selectedPrimaryReason ?: "",
+            fallbackReason = summary?.fallbackReason,
             finalApprovedProvider = summary?.finalApprovedProvider
         )
 

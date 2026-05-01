@@ -77,7 +77,14 @@ class SandboxPaymentSimulatorTest {
             providerTxId = "sandbox_tx_test",
             approvedAt = now,
             attempts = emptyList(),
-            selectionSummary = SelectionSummary.sandbox(),
+            selectionSummary = SelectionSummary(
+                initialCandidates = emptyList(),
+                filteredOutProviders = emptyList(),
+                selectedPrimaryProvider = Provider.TOSS,
+                selectedPrimaryReason = "테스트",
+                fallbackReason = null,
+                finalApprovedProvider = Provider.TOSS
+            ),
             metadata = emptyMap()
         )
     }
