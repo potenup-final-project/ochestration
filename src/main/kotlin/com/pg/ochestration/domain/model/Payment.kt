@@ -28,4 +28,40 @@ data class Payment(
         if (this.merchantId != requestingMerchantId)
             throw PaymentAccessDeniedException(paymentId, requestingMerchantId)
     }
+
+    fun ensureCancelable() = status.ensureCancelable(paymentId)
+
+    fun markCanceled(
+        canceledAt: Instant,
+        reason: String,
+        failure: PaymentFailure? = null
+    ): Payment {
+        ensureCancelable()
+        return copy(
+            status = PaymentStatus.CANCELED,
+            canceledAt = canceledAt,
+            cancelReason = reason,
+            failureCode = failure?.code,
+            failureCategory = failure?.category,
+            failureMessage = failure?.message
+        )
+    }
+
+    fun markFailed(failure: PaymentFailure?): Payment {
+        status.ensureCanFail(paymentId)
+        return copy(
+            status = PaymentStatus.FAILED,
+            failureCode = failure?.code,
+            failureCategory = failure?.category,
+            failureMessage = failure?.message
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Payment) return false
+        return paymentId == other.paymentId
+    }
+
+    override fun hashCode(): Int = paymentId.hashCode()
 }
