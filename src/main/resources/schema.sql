@@ -109,6 +109,45 @@ CREATE TABLE IF NOT EXISTS idempotency_records
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+CREATE TABLE IF NOT EXISTS webhook_endpoints
+(
+    endpoint_id     VARCHAR(36)   NOT NULL,
+    merchant_id     VARCHAR(100)  NOT NULL,
+    url             VARCHAR(2048) NOT NULL,
+    signing_secret  VARCHAR(255)  NOT NULL,
+    status          VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE',
+    description     VARCHAR(255)  NULL,
+    created_at      DATETIME(6)   NOT NULL,
+    updated_at      DATETIME(6)   NOT NULL,
+    PRIMARY KEY (endpoint_id),
+    INDEX idx_webhook_endpoints_merchant_status (merchant_id, status)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS webhook_deliveries
+(
+    delivery_id         VARCHAR(36)   NOT NULL,
+    endpoint_id         VARCHAR(36)   NOT NULL,
+    merchant_id         VARCHAR(100)  NOT NULL,
+    event_type          VARCHAR(50)   NOT NULL,
+    event_id            VARCHAR(36)   NOT NULL,
+    payment_id          VARCHAR(36)   NOT NULL,
+    payload             MEDIUMTEXT    NOT NULL,
+    status              VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
+    attempt_count       INT           NOT NULL DEFAULT 0,
+    max_attempts        INT           NOT NULL DEFAULT 5,
+    next_retry_at       DATETIME(6)   NULL,
+    last_attempted_at   DATETIME(6)   NULL,
+    last_response_code  INT           NULL,
+    last_error          VARCHAR(1000) NULL,
+    created_at          DATETIME(6)   NOT NULL,
+    PRIMARY KEY (delivery_id),
+    INDEX idx_webhook_deliveries_status_retry (status, next_retry_at),
+    INDEX idx_webhook_deliveries_merchant_created (merchant_id, created_at),
+    INDEX idx_webhook_deliveries_payment (payment_id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
 CREATE TABLE IF NOT EXISTS provider_connections
 (
     provider_connection_id VARCHAR(36)  NOT NULL,

@@ -1,0 +1,29 @@
+package com.pg.ochestration.domain.model
+
+import com.pg.ochestration.domain.exception.WebhookEndpointInactiveException
+import java.time.Instant
+
+data class WebhookEndpoint(
+    val endpointId: String,
+    val merchantId: String,
+    val url: String,
+    val signingSecret: String,
+    val status: WebhookEndpointStatus,
+    val description: String?,
+    val createdAt: Instant,
+    val updatedAt: Instant
+) {
+    fun ensureActive() = status.ensureActive(endpointId)
+
+    fun deactivate(now: Instant): WebhookEndpoint =
+        copy(status = WebhookEndpointStatus.INACTIVE, updatedAt = now)
+}
+
+enum class WebhookEndpointStatus {
+    ACTIVE,
+    INACTIVE;
+
+    fun ensureActive(endpointId: String) {
+        if (this != ACTIVE) throw WebhookEndpointInactiveException(endpointId)
+    }
+}
