@@ -7,6 +7,7 @@ import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentAttempt
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.SelectionSummary
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.PaymentAttemptJpaEntity
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.PaymentJpaEntity
 import com.pg.ochestration.infrastructure.persistence.jpa.entity.SelectionFilteredOutProviderJpaEntity
@@ -111,7 +112,7 @@ class PaymentRepository(
                 payment = entity,
                 initialSelectedPrimaryProvider = payment.selectionSummary.selectedPrimaryProvider,
                 initialSelectedPrimaryReason = payment.selectionSummary.selectedPrimaryReason,
-                initialFallbackReason = payment.selectionSummary.fallbackReason,
+                initialFallbackReasonCode = payment.selectionSummary.fallbackReasonCode,
                 initialFinalApprovedProvider = payment.selectionSummary.finalApprovedProvider
             )
 
@@ -124,7 +125,7 @@ class PaymentRepository(
         summary.syncSelectionData(
             selectedPrimaryProvider = payment.selectionSummary.selectedPrimaryProvider,
             selectedPrimaryReason = payment.selectionSummary.selectedPrimaryReason,
-            fallbackReason = payment.selectionSummary.fallbackReason,
+            fallbackReasonCode = payment.selectionSummary.fallbackReasonCode,
             finalApprovedProvider = payment.selectionSummary.finalApprovedProvider,
             initialCandidates = newInitialCandidates,
             filteredOutProviders = newFilteredOutProviders
@@ -143,8 +144,9 @@ class PaymentRepository(
                 ?.map { FilteredOutProvider(it.provider, it.reason) }
                 ?: emptyList(),
             selectedPrimaryProvider = summary?.selectedPrimaryProvider,
-            selectedPrimaryReason = summary?.selectedPrimaryReason ?: "",
-            fallbackReason = summary?.fallbackReason,
+            selectedPrimaryReason = summary?.selectedPrimaryReason
+                ?: SelectionPrimaryReason.NO_ELIGIBLE_PROVIDER,
+            fallbackReasonCode = summary?.fallbackReasonCode,
             finalApprovedProvider = summary?.finalApprovedProvider
         )
 

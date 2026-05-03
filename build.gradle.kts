@@ -36,6 +36,7 @@ dependencies {
 
     // Cache
     implementation("com.github.ben-manes.caffeine:caffeine")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
     // Security (BCrypt 전용, 전체 Spring Security 불필요)
     implementation("org.springframework.security:spring-security-crypto")

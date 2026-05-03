@@ -1,10 +1,14 @@
 package com.pg.ochestration.infrastructure.idempotency
 
+import com.pg.ochestration.application.port.out.MerchantApiKeyRepository
+import com.pg.ochestration.infrastructure.auth.ApiKeyCache
 import com.pg.ochestration.infrastructure.auth.ApiKeyHasher
+import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.filter.OncePerRequestFilter
@@ -13,6 +17,8 @@ import tools.jackson.databind.ObjectMapper
 
 private const val HEADER_IDEMPOTENCY_KEY = "Idempotency-Key"
 private const val HEADER_API_KEY = "X-Api-Key"
+private val APPROVE_PATH_REGEX = Regex("^/api/payments/approve$")
+private val CANCEL_PATH_REGEX = Regex("^/api/payments/[^/]+/cancel$")
 
 /**
  * POST 결제 요청에 대해 Redis 기반 멱등성을 처리하는 서블릿 필터.
@@ -30,7 +36,10 @@ private const val HEADER_API_KEY = "X-Api-Key"
 class IdempotencyFilter(
     private val idempotencyRedisStore: IdempotencyRedisStore,
     private val apiKeyHasher: ApiKeyHasher,
-    private val objectMapper: ObjectMapper
+    private val merchantApiKeyRepository: MerchantApiKeyRepository,
+    private val apiKeyCache: ApiKeyCache,
+    private val objectMapper: ObjectMapper,
+    @Value("\${auth.api-key.enabled:true}") private val authEnabled: Boolean
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -40,6 +49,12 @@ class IdempotencyFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        val operation = resolveOperation(request)
+        if (operation == null || !authEnabled) {
+            filterChain.doFilter(request, response)
+            return
+        }
+
         val idempotencyKey = request.getHeader(HEADER_IDEMPOTENCY_KEY)
         if (idempotencyKey.isNullOrBlank()) {
             filterChain.doFilter(request, response)
@@ -52,11 +67,18 @@ class IdempotencyFilter(
             filterChain.doFilter(request, response)
             return
         }
+        val principal = resolvePrincipal(rawApiKey)
+        if (principal == null) {
+            filterChain.doFilter(request, response)
+            return
+        }
 
-        val redisKey = idempotencyRedisStore.buildRedisKey(
-            apiKeyHash = apiKeyHasher.hash(rawApiKey),
-            idempotencyKey = idempotencyKey
+        val context = IdempotencyContext(
+            merchantId = principal.merchantId,
+            idempotencyKey = idempotencyKey,
+            operation = operation
         )
+        val redisKey = idempotencyRedisStore.buildRedisKey(context)
 
         val existing = idempotencyRedisStore.find(redisKey)
 
@@ -74,18 +96,18 @@ class IdempotencyFilter(
                     "멱등성 충돌(PROCESSING): idempotencyKey={}",
                     idempotencyKey
                 )
-                writeProcessingConflict(response, idempotencyKey)
+                writeProcessingConflict(response)
                 return
             }
             null -> {
-                val acquired = idempotencyRedisStore.tryAcquire(redisKey)
+                val acquired = idempotencyRedisStore.tryAcquire(context)
                 if (!acquired) {
                     // tryAcquire와 find 사이의 아주 좁은 경합 구간 — PROCESSING으로 처리
                     log.warn(
                         "멱등성 선점 실패(경합): idempotencyKey={}",
                         idempotencyKey
                     )
-                    writeProcessingConflict(response, idempotencyKey)
+                    writeProcessingConflict(response)
                     return
                 }
             }
@@ -99,7 +121,7 @@ class IdempotencyFilter(
             val body = String(cachingResponse.contentAsByteArray, Charsets.UTF_8)
 
             runCatching {
-                idempotencyRedisStore.complete(redisKey, httpStatus, body)
+                idempotencyRedisStore.complete(context, httpStatus, body)
             }.onFailure { ex ->
                 log.error(
                     "멱등성 완료 상태 저장 실패 (Redis 오류): idempotencyKey={}, error={}",
@@ -119,7 +141,7 @@ class IdempotencyFilter(
         response.writer.write(record.body ?: "")
     }
 
-    private fun writeProcessingConflict(response: HttpServletResponse, idempotencyKey: String) {
+    private fun writeProcessingConflict(response: HttpServletResponse) {
         response.status = HttpStatus.CONFLICT.value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.characterEncoding = Charsets.UTF_8.name()
@@ -127,9 +149,33 @@ class IdempotencyFilter(
             objectMapper.writeValueAsString(
                 mapOf(
                     "errorCode" to "IDEMPOTENCY_PROCESSING",
-                    "message" to "동일한 멱등성 키로 요청이 처리 중입니다. 잠시 후 다시 시도해주세요: $idempotencyKey"
+                    "message" to "동일한 멱등성 키로 요청이 처리 중입니다. 잠시 후 다시 시도해주세요."
                 )
             )
         )
+    }
+
+    private fun resolveOperation(request: HttpServletRequest): IdempotencyOperation? {
+        if (request.method != "POST") return null
+        return when {
+            APPROVE_PATH_REGEX.matches(request.requestURI) -> IdempotencyOperation.APPROVE
+            CANCEL_PATH_REGEX.matches(request.requestURI) -> IdempotencyOperation.CANCEL
+            else -> null
+        }
+    }
+
+    private fun resolvePrincipal(rawApiKey: String): MerchantPrincipal? {
+        val keyHash = apiKeyHasher.hash(rawApiKey)
+        apiKeyCache.get(keyHash)?.let { return it }
+
+        val apiKey = merchantApiKeyRepository.findActiveByHash(keyHash) ?: return null
+        return runCatching {
+            apiKey.ensureNotExpired()
+            if (!apiKey.isActive()) return null
+            MerchantPrincipal(
+                merchantId = apiKey.merchantId,
+                environment = apiKey.environment
+            ).also { apiKeyCache.put(keyHash, it) }
+        }.getOrNull()
     }
 }

@@ -6,6 +6,7 @@ import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.SelectionSummary
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -81,8 +82,8 @@ class SandboxPaymentSimulatorTest {
                 initialCandidates = emptyList(),
                 filteredOutProviders = emptyList(),
                 selectedPrimaryProvider = Provider.TOSS,
-                selectedPrimaryReason = "테스트",
-                fallbackReason = null,
+                selectedPrimaryReason = SelectionPrimaryReason.HIGHEST_PRIORITY_DEFAULT,
+                fallbackReasonCode = null,
                 finalApprovedProvider = Provider.TOSS
             ),
             metadata = emptyMap()

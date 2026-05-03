@@ -29,3 +29,19 @@ CREATE TABLE IF NOT EXISTS merchants (
     PRIMARY KEY (merchant_id),
     UNIQUE (email)
 );
+
+CREATE TABLE IF NOT EXISTS idempotency_records (
+    record_id        VARCHAR(36)  NOT NULL,
+    redis_key        VARCHAR(512) NOT NULL,
+    merchant_id      VARCHAR(100) NOT NULL,
+    idempotency_key  VARCHAR(255) NOT NULL,
+    operation        VARCHAR(20)  NOT NULL,
+    status           VARCHAR(20)  NOT NULL,
+    http_status      INT,
+    response_body    CLOB,
+    created_at       TIMESTAMP    NOT NULL,
+    completed_at     TIMESTAMP,
+    PRIMARY KEY (record_id),
+    UNIQUE (redis_key),
+    UNIQUE (merchant_id, idempotency_key, operation)
+);

@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS payment_selection_summaries
     id                       BIGINT       NOT NULL AUTO_INCREMENT,
     payment_id               VARCHAR(36)  NOT NULL,
     selected_primary_provider VARCHAR(50)  NULL,
-    selected_primary_reason  VARCHAR(500) NOT NULL,
-    fallback_reason          VARCHAR(500) NULL,
+    selected_primary_reason  VARCHAR(100) NOT NULL,
+    fallback_reason_code     VARCHAR(100) NULL,
     final_approved_provider  VARCHAR(50)  NULL,
     PRIMARY KEY (id),
     UNIQUE INDEX uq_payment_selection_summaries_payment_id (payment_id),
@@ -87,6 +87,25 @@ CREATE TABLE IF NOT EXISTS payment_selection_filtered_out_providers
     CONSTRAINT fk_selection_filtered_out_summary
         FOREIGN KEY (selection_summary_id) REFERENCES payment_selection_summaries (id)
             ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS idempotency_records
+(
+    record_id        VARCHAR(36)   NOT NULL,
+    redis_key        VARCHAR(512)  NOT NULL,
+    merchant_id      VARCHAR(100)  NOT NULL,
+    idempotency_key  VARCHAR(255)  NOT NULL,
+    operation        VARCHAR(20)   NOT NULL,
+    status           VARCHAR(20)   NOT NULL,
+    http_status      INT           NULL,
+    response_body    MEDIUMTEXT    NULL,
+    created_at       DATETIME(6)   NOT NULL,
+    completed_at     DATETIME(6)   NULL,
+    PRIMARY KEY (record_id),
+    UNIQUE INDEX uq_idempotency_records_redis_key (redis_key),
+    UNIQUE INDEX uq_idempotency_records_merchant_key_op (merchant_id, idempotency_key, operation),
+    INDEX idx_idempotency_records_created_at (created_at)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
