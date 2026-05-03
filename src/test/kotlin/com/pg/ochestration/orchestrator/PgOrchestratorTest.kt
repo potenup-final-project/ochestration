@@ -7,6 +7,7 @@ import com.pg.ochestration.application.port.out.GatewayCancelResult
 import com.pg.ochestration.application.port.out.GatewayFailure
 import com.pg.ochestration.application.port.out.GatewayPaymentQuery
 import com.pg.ochestration.application.port.out.GatewayPaymentResult
+import com.pg.ochestration.application.port.out.PaymentIdGeneratorPort
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.domain.model.AttemptResult
 import com.pg.ochestration.domain.model.FailureCategory
@@ -14,7 +15,9 @@ import com.pg.ochestration.domain.model.FilteredOutProvider
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
+import com.pg.ochestration.domain.model.ProviderSelectionResult
 import com.pg.ochestration.domain.model.SelectionSummary
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
 import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
@@ -101,7 +104,7 @@ class PgOrchestratorTest {
         assertEquals(PaymentStatus.FAILED, payment.status)
         assertEquals(1, payment.attempts.size)
         assertEquals(Provider.TOSS, payment.attempts.first().provider)
-        assertNotNull(payment.selectionSummary.fallbackReason)
+        assertNotNull(payment.selectionSummary.fallbackReasonCode)
         assertEquals("CARD_LIMIT_EXCEEDED", payment.failureCode)
     }
 
@@ -111,7 +114,7 @@ class PgOrchestratorTest {
     ): PgOrchestrator {
         val fakePolicy = FakeProviderSelectionPolicy(candidates)
         val fakeRepository = InMemoryPaymentRepository()
-        return PgOrchestrator(fakePolicy, gateways, fakeRepository)
+        return PgOrchestrator(FixedPaymentIdGenerator(), fakePolicy, gateways, fakeRepository)
     }
 
     private fun technicalFailure(): GatewayApproveResult =
@@ -185,8 +188,12 @@ private class FakeProviderSelectionPolicy(
             filteredOutProviders = emptyList<FilteredOutProvider>(),
             candidates = candidates,
             selectedPrimaryProvider = candidates.firstOrNull(),
-            selectedPrimaryReason = "fixed by test stub"
+            selectedPrimaryReason = SelectionPrimaryReason.HIGHEST_PRIORITY_DEFAULT
         )
+}
+
+private class FixedPaymentIdGenerator : PaymentIdGeneratorPort {
+    override fun generate(): String = UUID.randomUUID().toString()
 }
 
 private class InMemoryPaymentRepository : PaymentRepository(

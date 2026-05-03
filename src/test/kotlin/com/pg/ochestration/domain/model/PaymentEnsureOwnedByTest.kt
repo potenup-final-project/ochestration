@@ -61,8 +61,8 @@ private fun aPayment(
         initialCandidates = listOf(Provider.TOSS),
         filteredOutProviders = emptyList(),
         selectedPrimaryProvider = Provider.TOSS,
-        selectedPrimaryReason = "preferred",
-        fallbackReason = null,
+        selectedPrimaryReason = SelectionPrimaryReason.USER_PREFERRED,
+        fallbackReasonCode = null,
         finalApprovedProvider = Provider.TOSS
     ),
     metadata = emptyMap(),

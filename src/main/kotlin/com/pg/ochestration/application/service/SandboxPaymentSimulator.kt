@@ -7,6 +7,7 @@ import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.SelectionSummary
+import com.pg.ochestration.domain.model.SelectionPrimaryReason
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -95,8 +96,8 @@ class SandboxPaymentSimulator(
         initialCandidates = emptyList(),
         filteredOutProviders = emptyList(),
         selectedPrimaryProvider = Provider.TOSS,
-        selectedPrimaryReason = "Sandbox 시뮬레이션",
-        fallbackReason = null,
+        selectedPrimaryReason = SelectionPrimaryReason.HIGHEST_PRIORITY_DEFAULT,
+        fallbackReasonCode = null,
         finalApprovedProvider = Provider.TOSS
     )
 }
