@@ -11,7 +11,6 @@ data class PaymentApproveRequest(
     val orderId: String,
     val amount: Long,
     val currency: String = "KRW",
-    val idempotencyKey: String? = null,
     val requestedAt: Instant? = null,
     val preferredPrimaryProvider: Provider? = null,
     val metadata: Map<String, String> = emptyMap()
@@ -19,7 +18,6 @@ data class PaymentApproveRequest(
 
 data class PaymentCancelRequest(
     val reason: String,
-    val idempotencyKey: String? = null,
     val requestedAt: Instant? = null
 )
 

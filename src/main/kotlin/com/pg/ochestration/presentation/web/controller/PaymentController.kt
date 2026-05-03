@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -21,6 +22,7 @@ class PaymentController(
     @PostMapping("/approve")
     suspend fun approve(
         @RequestBody request: PaymentApproveRequest,
+        @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: String?,
         principal: MerchantPrincipal
     ): PaymentView {
         val payment = unifiedPaymentService.approve(
@@ -28,7 +30,7 @@ class PaymentController(
             orderId = request.orderId,
             amount = request.amount,
             currency = request.currency,
-            idempotencyKey = request.idempotencyKey,
+            idempotencyKey = idempotencyKey,
             requestedAt = request.requestedAt,
             preferredPrimaryProvider = request.preferredPrimaryProvider,
             metadata = request.metadata
@@ -47,13 +49,14 @@ class PaymentController(
     suspend fun cancel(
         @PathVariable paymentId: String,
         @RequestBody request: PaymentCancelRequest,
+        @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: String?,
         principal: MerchantPrincipal
     ): PaymentCancelResponse =
         unifiedPaymentService.cancel(
             principal = principal,
             paymentId = paymentId,
             reason = request.reason,
-            idempotencyKey = request.idempotencyKey,
+            idempotencyKey = idempotencyKey,
             requestedAt = request.requestedAt
         )
 }
