@@ -36,14 +36,7 @@ data class WebhookDelivery(
         status.ensureRetryable(deliveryId)
         val nextAttemptCount = attemptCount + 1
         return if (nextAttemptCount >= maxAttempts) {
-            copy(
-                status = WebhookDeliveryStatus.DEAD,
-                attemptCount = nextAttemptCount,
-                nextRetryAt = null,
-                lastAttemptedAt = now,
-                lastResponseCode = responseCode,
-                lastError = error
-            )
+            markDead(error = error, responseCode = responseCode, now = now, attemptCount = nextAttemptCount)
         } else {
             copy(
                 status = WebhookDeliveryStatus.FAILED,
@@ -55,6 +48,21 @@ data class WebhookDelivery(
             )
         }
     }
+
+    fun markDead(error: String, responseCode: Int?, now: Instant = Instant.now()): WebhookDelivery {
+        status.ensureRetryable(deliveryId)
+        return markDead(error = error, responseCode = responseCode, now = now, attemptCount = attemptCount + 1)
+    }
+
+    private fun markDead(error: String, responseCode: Int?, now: Instant, attemptCount: Int): WebhookDelivery =
+        copy(
+            status = WebhookDeliveryStatus.DEAD,
+            attemptCount = attemptCount,
+            nextRetryAt = null,
+            lastAttemptedAt = now,
+            lastResponseCode = responseCode,
+            lastError = error
+        )
 
     private fun calculateNextRetryAt(attemptCount: Int, now: Instant): Instant =
         now.plusSeconds(1L shl (attemptCount - 1))
