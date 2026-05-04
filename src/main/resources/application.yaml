@@ -44,3 +44,11 @@ onboarding:
     ttl-minutes: 30
   onboarding-token:
     ttl-minutes: 10
+
+webhook:
+  dispatch:
+    enabled: ${WEBHOOK_DISPATCH_ENABLED:true}
+    fixed-delay-ms: ${WEBHOOK_DISPATCH_FIXED_DELAY_MS:10000}
+    batch-size: ${WEBHOOK_DISPATCH_BATCH_SIZE:50}
+    connect-timeout-ms: ${WEBHOOK_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${WEBHOOK_READ_TIMEOUT_MS:10000}

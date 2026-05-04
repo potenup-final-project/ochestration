@@ -32,7 +32,8 @@
 - `presentation/web/controller/WebhookEndpointController.kt` 추가
 - `presentation/web/dto/WebhookEndpointDtos.kt` 추가
 - `ApiExceptionHandler`에 `WebhookException` 매핑 추가
-- 요청 URL은 우선 `http://` 또는 `https://` 형식만 허용한다.
+- `WebhookUrlValidator`를 사용해 endpoint 등록/수정 URL을 검증한다.
+- URL 검증 정책: `http`/`https`만 허용, userinfo 금지, fragment 금지, host 필수, DNS 해석 실패 거절, localhost/loopback/private/link-local/cloud metadata 주소 거절.
 
 ## 6. Success Metrics & Verification
 
@@ -41,12 +42,13 @@
 - 5개 초과 등록은 409 또는 400 계열 에러로 거절된다.
 - 다른 merchant의 endpointId는 조회/수정/삭제할 수 없다.
 - inactive endpoint는 조회에는 보이지만 신규 delivery 생성 대상에서는 제외된다.
+- localhost, private IP, link-local, cloud metadata IP로 해석되는 URL은 등록/수정이 거절된다.
 
 ## 7. Risks & Mitigations
 
 - secret을 응답에 계속 노출하면 보안 위험이 크다. 생성 응답에만 최초 1회 노출하고, 일반 조회/수정/삭제 응답에서는 원문을 제외한다. 테스트에서 `signingSecret` 필드가 응답 DTO에 없는지 검증한다.
 - DELETE를 물리 삭제로 구현하면 과거 delivery의 endpoint 참조가 깨질 수 있다. MVP에서는 비활성화로 처리하는 방향을 우선한다.
-- URL 검증을 과하게 만들면 정상 사내 URL을 막을 수 있다. MVP는 스킴 검증으로 제한한다.
+- URL 검증을 과하게 만들면 정상 사내 URL을 막을 수 있다. 다만 웹훅은 SSRF 위험이 높으므로 MVP에서도 내부망/metadata endpoint 차단을 기본값으로 둔다. 사내망 허용이 필요하면 별도 allowlist 정책으로 다룬다.
 
 ## 8. Out Of Scope
 
