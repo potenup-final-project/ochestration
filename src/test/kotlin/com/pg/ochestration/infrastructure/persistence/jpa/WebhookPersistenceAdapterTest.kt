@@ -45,6 +45,19 @@ class WebhookPersistenceAdapterTest {
     }
 
     @Test
+    fun `findAllByMerchantId는 상태와 관계없이 해당 가맹점 엔드포인트만 반환한다`() {
+        endpointAdapter.save(anEndpoint(endpointId = "endpoint-all-1", status = WebhookEndpointStatus.ACTIVE))
+        endpointAdapter.save(anEndpoint(endpointId = "endpoint-all-2", status = WebhookEndpointStatus.INACTIVE))
+        endpointAdapter.save(
+            anEndpoint(endpointId = "endpoint-other", status = WebhookEndpointStatus.ACTIVE, merchantId = "merchant-other")
+        )
+
+        val endpoints = endpointAdapter.findAllByMerchantId("merchant-001")
+
+        assertEquals(setOf("endpoint-all-1", "endpoint-all-2"), endpoints.map { it.endpointId }.toSet())
+    }
+
+    @Test
     fun `deactivate는 엔드포인트를 삭제하지 않고 INACTIVE 상태로 저장한다`() {
         val now = Instant.parse("2026-05-04T00:01:00Z")
         endpointAdapter.save(anEndpoint(endpointId = "endpoint-deactivate", status = WebhookEndpointStatus.ACTIVE))
@@ -106,10 +119,11 @@ class WebhookPersistenceAdapterTest {
 
 private fun anEndpoint(
     endpointId: String,
-    status: WebhookEndpointStatus
+    status: WebhookEndpointStatus,
+    merchantId: String = "merchant-001"
 ) = WebhookEndpoint(
     endpointId = endpointId,
-    merchantId = "merchant-001",
+    merchantId = merchantId,
     url = "https://merchant.example/webhook",
     signingSecret = "secret",
     status = status,

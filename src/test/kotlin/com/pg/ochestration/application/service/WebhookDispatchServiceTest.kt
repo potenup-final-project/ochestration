@@ -147,6 +147,7 @@ private class FakeEndpointRepository(
 ) : WebhookEndpointRepository {
     override fun save(endpoint: WebhookEndpoint): WebhookEndpoint = endpoint
     override fun findById(endpointId: String): WebhookEndpoint? = endpoint.takeIf { it.endpointId == endpointId }
+    override fun findAllByMerchantId(merchantId: String): List<WebhookEndpoint> = listOf(endpoint)
     override fun findActiveByMerchantId(merchantId: String): List<WebhookEndpoint> = listOf(endpoint)
     override fun countByMerchantId(merchantId: String): Int = 1
     override fun deactivate(endpointId: String, now: Instant): WebhookEndpoint? = endpoint.deactivate(now)

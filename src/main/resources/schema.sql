@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS webhook_endpoints
 (
     endpoint_id     VARCHAR(36)   NOT NULL,
     merchant_id     VARCHAR(100)  NOT NULL,
-    url             VARCHAR(2048) NOT NULL,
+    url             TEXT          NOT NULL,
     signing_secret  VARCHAR(255)  NOT NULL,
     status          VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE',
     description     VARCHAR(255)  NULL,

@@ -24,6 +24,9 @@ class MerchantAdapter(
     override fun findById(merchantId: String): Merchant? =
         jpaRepository.findById(merchantId).orElse(null)?.toDomain()
 
+    override fun findByIdForUpdate(merchantId: String): Merchant? =
+        jpaRepository.findByIdForUpdate(merchantId).orElse(null)?.toDomain()
+
     override fun findByEmail(email: String): Merchant? =
         jpaRepository.findByEmail(email).orElse(null)?.toDomain()
 

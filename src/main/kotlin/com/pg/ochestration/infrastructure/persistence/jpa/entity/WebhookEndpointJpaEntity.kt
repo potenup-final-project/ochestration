@@ -26,7 +26,7 @@ class WebhookEndpointJpaEntity(
     @Column(name = "merchant_id", length = 100, nullable = false)
     val merchantId: String,
 
-    @Column(name = "url", length = 2048, nullable = false)
+    @Column(name = "url", columnDefinition = "TEXT", nullable = false)
     val url: String,
 
     @Column(name = "signing_secret", length = 255, nullable = false)

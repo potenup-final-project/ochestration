@@ -21,6 +21,9 @@ class WebhookEndpointAdapter(
     override fun findById(endpointId: String): WebhookEndpoint? =
         jpaRepository.findById(endpointId).orElse(null)?.toDomain()
 
+    override fun findAllByMerchantId(merchantId: String): List<WebhookEndpoint> =
+        jpaRepository.findAllByMerchantId(merchantId).map { it.toDomain() }
+
     override fun findActiveByMerchantId(merchantId: String): List<WebhookEndpoint> =
         jpaRepository.findAllByMerchantIdAndStatus(merchantId, WebhookEndpointStatus.ACTIVE)
             .map { it.toDomain() }
