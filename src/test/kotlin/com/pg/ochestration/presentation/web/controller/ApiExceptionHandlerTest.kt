@@ -7,6 +7,10 @@ import com.pg.ochestration.domain.exception.InvalidApiKeyStateException
 import com.pg.ochestration.domain.exception.MissingApiKeyException
 import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
 import com.pg.ochestration.domain.exception.RevokedApiKeyException
+import com.pg.ochestration.domain.exception.WebhookEndpointDescriptionTooLongException
+import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededException
+import com.pg.ochestration.domain.exception.WebhookEndpointNotFoundException
+import com.pg.ochestration.domain.exception.WebhookEndpointUrlNotAllowedException
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.ApiKeyStatus
 import org.springframework.http.HttpStatus
@@ -110,4 +114,37 @@ class ApiExceptionHandlerTest {
 
         assertNotNull(response.body?.timestamp)
     }
+
+    @Test
+    fun `should return 404 with WEBHOOK_ENDPOINT_NOT_FOUND for WebhookEndpointNotFoundException`() {
+        val response = handler.handleWebhookException(WebhookEndpointNotFoundException("endpoint-001"))
+
+        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        assertEquals("WEBHOOK_ENDPOINT_NOT_FOUND", response.body?.errorCode)
+    }
+
+    @Test
+    fun `should return 409 with WEBHOOK_ENDPOINT_LIMIT_EXCEEDED for WebhookEndpointLimitExceededException`() {
+        val response = handler.handleWebhookException(WebhookEndpointLimitExceededException("merchant-001", 5))
+
+        assertEquals(HttpStatus.CONFLICT, response.statusCode)
+        assertEquals("WEBHOOK_ENDPOINT_LIMIT_EXCEEDED", response.body?.errorCode)
+    }
+
+    @Test
+    fun `should return 400 with WEBHOOK_ENDPOINT_URL_NOT_ALLOWED for WebhookEndpointUrlNotAllowedException`() {
+        val response = handler.handleWebhookException(WebhookEndpointUrlNotAllowedException("localhost"))
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("WEBHOOK_ENDPOINT_URL_NOT_ALLOWED", response.body?.errorCode)
+    }
+
+    @Test
+    fun `should return 400 with WEBHOOK_ENDPOINT_DESCRIPTION_TOO_LONG for WebhookEndpointDescriptionTooLongException`() {
+        val response = handler.handleWebhookException(WebhookEndpointDescriptionTooLongException(256, 255))
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("WEBHOOK_ENDPOINT_DESCRIPTION_TOO_LONG", response.body?.errorCode)
+    }
+
 }
