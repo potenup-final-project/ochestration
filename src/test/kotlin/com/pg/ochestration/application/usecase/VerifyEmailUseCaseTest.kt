@@ -134,6 +134,7 @@ private class VerifyFakeMerchantRepository : MerchantRepository {
     }
 
     override fun findById(merchantId: String): Merchant? = store[merchantId]
+    override fun findByIdForUpdate(merchantId: String): Merchant? = store[merchantId]
     override fun findByEmail(email: String): Merchant? = store.values.firstOrNull { it.email == email }
     override fun existsByEmail(email: String): Boolean = store.values.any { it.email == email }
 }

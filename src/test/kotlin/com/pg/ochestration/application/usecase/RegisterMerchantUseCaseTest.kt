@@ -101,6 +101,8 @@ private class FakeMerchantRepository : MerchantRepository {
 
     override fun findById(merchantId: String): Merchant? = store[merchantId]
 
+    override fun findByIdForUpdate(merchantId: String): Merchant? = store[merchantId]
+
     override fun findByEmail(email: String): Merchant? =
         store.values.firstOrNull { it.email == email }
 
