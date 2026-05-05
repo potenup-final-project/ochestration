@@ -17,6 +17,14 @@ data class WebhookEndpoint(
 
     fun deactivate(now: Instant): WebhookEndpoint =
         copy(status = WebhookEndpointStatus.INACTIVE, updatedAt = now)
+
+    fun update(url: String?, status: WebhookEndpointStatus?, description: String?, now: Instant): WebhookEndpoint =
+        copy(
+            url = url ?: this.url,
+            status = status ?: this.status,
+            description = description ?: this.description,
+            updatedAt = now
+        )
 }
 
 enum class WebhookEndpointStatus {
