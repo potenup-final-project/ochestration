@@ -12,6 +12,11 @@ import com.pg.ochestration.domain.exception.MerchantNotFoundException
 import com.pg.ochestration.domain.exception.OnboardingException
 import com.pg.ochestration.domain.exception.OnboardingTokenExpiredException
 import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
+import com.pg.ochestration.domain.exception.WebhookEndpointDescriptionTooLongException
+import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededException
+import com.pg.ochestration.domain.exception.WebhookEndpointNotFoundException
+import com.pg.ochestration.domain.exception.WebhookEndpointUrlNotAllowedException
+import com.pg.ochestration.domain.exception.WebhookException
 import com.pg.ochestration.presentation.web.dto.ApiErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -66,6 +71,24 @@ class ApiExceptionHandler {
             ApiErrorResponse(
                 errorCode = ex.errorCode,
                 message = ex.message ?: "Onboarding error",
+                timestamp = Instant.now()
+            )
+        )
+    }
+
+    @ExceptionHandler(WebhookException::class)
+    fun handleWebhookException(ex: WebhookException): ResponseEntity<ApiErrorResponse> {
+        val status = when (ex) {
+            is WebhookEndpointNotFoundException -> HttpStatus.NOT_FOUND
+            is WebhookEndpointLimitExceededException -> HttpStatus.CONFLICT
+            is WebhookEndpointDescriptionTooLongException -> HttpStatus.BAD_REQUEST
+            is WebhookEndpointUrlNotAllowedException -> HttpStatus.BAD_REQUEST
+            else -> HttpStatus.BAD_REQUEST
+        }
+        return ResponseEntity.status(status).body(
+            ApiErrorResponse(
+                errorCode = ex.errorCode,
+                message = ex.message ?: "Webhook error",
                 timestamp = Instant.now()
             )
         )
