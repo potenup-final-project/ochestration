@@ -36,7 +36,13 @@ class PgOrchestrator(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    suspend fun approve(command: ApprovePaymentCommand): Payment {
+    suspend fun approve(command: ApprovePaymentCommand): Payment =
+        approve(command, paymentRepository::save)
+
+    suspend fun approve(
+        command: ApprovePaymentCommand,
+        savePayment: (Payment) -> Payment
+    ): Payment {
         val paymentId = paymentIdGenerator.generate()
         val selection = providerSelectionPolicy.selectForApprove(command.merchantId, command.preferredPrimaryProvider)
 
@@ -45,7 +51,7 @@ class PgOrchestrator(
                 "[Orchestrator] 가용 PG 없음 — paymentId={}, merchantId={}, filteredOut={}",
                 paymentId, command.merchantId, selection.filteredOutProviders
             )
-            return paymentRepository.save(
+            return savePayment(
                 Payment(
                     paymentId = paymentId,
                     merchantId = command.merchantId,
@@ -120,7 +126,7 @@ class PgOrchestrator(
                     ),
                     metadata = command.metadata + result.metadata
                 )
-                return paymentRepository.save(payment)
+                return savePayment(payment)
             }
 
             attempts += PaymentAttempt(
@@ -160,7 +166,7 @@ class PgOrchestrator(
         }
 
         val lastFailure = attempts.lastOrNull { it.result == AttemptResult.FAIL }
-        return paymentRepository.save(
+        return savePayment(
             Payment(
                 paymentId = paymentId,
                 merchantId = command.merchantId,
