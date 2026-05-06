@@ -83,6 +83,15 @@ class WebhookPersistenceAdapterTest {
     }
 
     @Test
+    fun `delivery는 sandbox paymentId를 저장할 수 있다`() {
+        val sandboxPaymentId = "pay_sandbox_123456789012345678901234567890123456"
+
+        val saved = deliveryAdapter.save(aDelivery(deliveryId = "delivery-sandbox-payment", paymentId = sandboxPaymentId))
+
+        assertEquals(sandboxPaymentId, saved.paymentId)
+    }
+
+    @Test
     fun `findDueForDispatch는 PENDING과 재시도 시간이 지난 FAILED만 반환한다`() {
         val now = Instant.parse("2026-05-04T00:00:10Z")
         deliveryAdapter.save(aDelivery(deliveryId = "delivery-pending", status = WebhookDeliveryStatus.PENDING))
@@ -135,14 +144,15 @@ private fun anEndpoint(
 private fun aDelivery(
     deliveryId: String,
     status: WebhookDeliveryStatus = WebhookDeliveryStatus.PENDING,
-    nextRetryAt: Instant? = null
+    nextRetryAt: Instant? = null,
+    paymentId: String = "payment-001"
 ) = WebhookDelivery(
     deliveryId = deliveryId,
     endpointId = "endpoint-001",
     merchantId = "merchant-001",
     eventType = WebhookEventType.PAYMENT_APPROVED,
     eventId = "event-$deliveryId",
-    paymentId = "payment-001",
+    paymentId = paymentId,
     payload = """{"eventId":"event-$deliveryId"}""",
     status = status,
     attemptCount = 0,
