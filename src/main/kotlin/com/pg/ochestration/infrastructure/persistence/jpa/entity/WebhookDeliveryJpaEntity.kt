@@ -39,7 +39,7 @@ class WebhookDeliveryJpaEntity(
     @Column(name = "event_id", length = 36, nullable = false)
     val eventId: String,
 
-    @Column(name = "payment_id", length = 36, nullable = false)
+    @Column(name = "payment_id", length = 100, nullable = false)
     val paymentId: String,
 
     @Column(name = "payload", columnDefinition = "MEDIUMTEXT", nullable = false)

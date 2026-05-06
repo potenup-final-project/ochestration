@@ -23,7 +23,10 @@ class SandboxPaymentSimulator(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun simulateApprove(command: ApprovePaymentCommand): Payment {
+    fun simulateApprove(
+        command: ApprovePaymentCommand,
+        savePayment: (Payment) -> Payment = paymentSavePort::save
+    ): Payment {
         val paymentId = "pay_sandbox_${UUID.randomUUID()}"
         val isForcedFailure = command.orderId.contains(SANDBOX_FAILURE_KEYWORD, ignoreCase = true)
 
@@ -79,17 +82,20 @@ class SandboxPaymentSimulator(
             )
         }
 
-        return paymentSavePort.save(payment)
+        return savePayment(payment)
     }
 
-    fun simulateCancel(payment: Payment): Payment {
+    fun simulateCancel(
+        payment: Payment,
+        savePayment: (Payment) -> Payment = paymentSavePort::save
+    ): Payment {
         log.info("Sandbox 취소 성공 시뮬레이션 — paymentId={}", payment.paymentId)
         val canceled = payment.copy(
             status = PaymentStatus.CANCELED,
             canceledAt = Instant.now(),
             cancelReason = "Sandbox 취소"
         )
-        return paymentSavePort.save(canceled)
+        return savePayment(canceled)
     }
 
     private fun sandboxSelectionSummary(): SelectionSummary = SelectionSummary(

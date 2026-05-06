@@ -6,12 +6,15 @@ import com.pg.ochestration.application.port.out.GatewayCancelCommand
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
+import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
+import com.pg.ochestration.domain.model.WebhookEventType
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
 import com.pg.ochestration.presentation.web.dto.PaymentFailureView
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
 import java.util.UUID
 
@@ -20,7 +23,9 @@ class UnifiedPaymentService(
     private val pgOrchestrator: PgOrchestrator,
     private val paymentRepository: PaymentRepository,
     private val gateways: List<PaymentProviderGateway>,
-    private val sandboxPaymentSimulator: SandboxPaymentSimulator
+    private val sandboxPaymentSimulator: SandboxPaymentSimulator,
+    private val webhookPaymentEventPublisher: WebhookPaymentEventPublisher,
+    private val transactionTemplate: TransactionTemplate
 ) {
     suspend fun approve(
         principal: MerchantPrincipal,
@@ -44,10 +49,14 @@ class UnifiedPaymentService(
         )
 
         if (principal.environment == ApiKeyEnvironment.SANDBOX) {
-            return sandboxPaymentSimulator.simulateApprove(command)
+            return sandboxPaymentSimulator.simulateApprove(command) { payment ->
+                savePaymentAndPublishApproveEvent(payment)
+            }
         }
 
-        return pgOrchestrator.approve(command)
+        return pgOrchestrator.approve(command) { payment ->
+            savePaymentAndPublishApproveEvent(payment)
+        }
     }
 
     suspend fun getPayment(merchantId: String, paymentId: String): Payment {
@@ -69,7 +78,9 @@ class UnifiedPaymentService(
         payment.ensureOwnedBy(principal.merchantId)
 
         if (principal.environment == ApiKeyEnvironment.SANDBOX) {
-            val canceledPayment = sandboxPaymentSimulator.simulateCancel(payment)
+            val canceledPayment = sandboxPaymentSimulator.simulateCancel(payment) { canceled ->
+                savePaymentAndPublishWebhookEvent(canceled, WebhookEventType.PAYMENT_CANCELED)
+            }
             return buildCancelResponse(canceledPayment)
         }
 
@@ -101,7 +112,11 @@ class UnifiedPaymentService(
             failureMessage = cancelResult.failure?.message,
             metadata = payment.metadata + cancelResult.metadata
         )
-        paymentRepository.save(canceled)
+        if (canceled.status == PaymentStatus.CANCELED) {
+            savePaymentAndPublishWebhookEvent(canceled, WebhookEventType.PAYMENT_CANCELED)
+        } else {
+            paymentRepository.save(canceled)
+        }
 
         return PaymentCancelResponse(
             paymentId = paymentId,
@@ -130,5 +145,23 @@ class UnifiedPaymentService(
             failure = null,
             metadata = payment.metadata
         )
+    }
+
+    private fun savePaymentAndPublishApproveEvent(payment: Payment): Payment {
+        val eventType = when (payment.status) {
+            PaymentStatus.APPROVED -> WebhookEventType.PAYMENT_APPROVED
+            PaymentStatus.FAILED -> WebhookEventType.PAYMENT_FAILED
+            PaymentStatus.READY,
+            PaymentStatus.CANCELED -> return paymentRepository.save(payment)
+        }
+        return savePaymentAndPublishWebhookEvent(payment, eventType)
+    }
+
+    private fun savePaymentAndPublishWebhookEvent(payment: Payment, eventType: WebhookEventType): Payment {
+        return transactionTemplate.execute {
+            val saved = paymentRepository.save(payment)
+            webhookPaymentEventPublisher.publish(saved, eventType)
+            saved
+        } ?: error("결제 저장 및 웹훅 delivery 생성 트랜잭션 결과가 없습니다")
     }
 }
