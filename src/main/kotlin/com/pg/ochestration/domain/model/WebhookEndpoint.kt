@@ -31,7 +31,9 @@ enum class WebhookEndpointStatus {
     ACTIVE,
     INACTIVE;
 
+    fun isActive(): Boolean = this == ACTIVE
+
     fun ensureActive(endpointId: String) {
-        if (this != ACTIVE) throw WebhookEndpointInactiveException(endpointId)
+        if (!isActive()) throw WebhookEndpointInactiveException(endpointId)
     }
 }
