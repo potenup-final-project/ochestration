@@ -46,6 +46,13 @@ class WebhookDispatchService(
             val endpoint = requireNotNull(webhookEndpointRepository.findById(delivery.endpointId)) {
                 "웹훅 엔드포인트를 찾을 수 없습니다: endpointId=${delivery.endpointId}"
             }
+            if (!endpoint.status.isActive()) {
+                return@runCatching delivery.markDead(
+                    error = "웹훅 엔드포인트가 비활성 상태입니다: endpointId=${endpoint.endpointId}",
+                    responseCode = null,
+                    now = now
+                )
+            }
             val urlValidation = webhookUrlValidator.validate(endpoint.url)
             if (!urlValidation.allowed) {
                 return@runCatching delivery.markDead(

@@ -112,13 +112,33 @@ class WebhookDispatchServiceTest {
         assertEquals(0, httpClient.postCount)
     }
 
+    @Test
+    fun `비활성 endpoint는 DEAD로 저장하고 HTTP 요청을 보내지 않는다`() {
+        val now = Instant.parse("2026-05-04T00:00:00Z")
+        val deliveryRepository = FakeDeliveryRepository(listOf(aDelivery()))
+        val httpClient = RecordingHttpClient()
+        val service = aService(
+            deliveryRepository = deliveryRepository,
+            httpClient = httpClient,
+            endpoint = aEndpoint(status = WebhookEndpointStatus.INACTIVE)
+        )
+
+        service.dispatchDue(now)
+
+        val saved = deliveryRepository.saved.single()
+        assertEquals(WebhookDeliveryStatus.DEAD, saved.status)
+        assertEquals(1, saved.attemptCount)
+        assertEquals(0, httpClient.postCount)
+    }
+
     private fun aService(
         deliveryRepository: FakeDeliveryRepository,
         httpClient: WebhookHttpClient,
-        urlValidator: WebhookUrlValidator = FakeUrlValidator(WebhookUrlValidationResult.allowed())
+        urlValidator: WebhookUrlValidator = FakeUrlValidator(WebhookUrlValidationResult.allowed()),
+        endpoint: WebhookEndpoint = aEndpoint()
     ) = WebhookDispatchService(
         webhookDeliveryRepository = deliveryRepository,
-        webhookEndpointRepository = FakeEndpointRepository(aEndpoint()),
+        webhookEndpointRepository = FakeEndpointRepository(endpoint),
         webhookHttpClient = httpClient,
         webhookSigner = FakeSigner(),
         webhookUrlValidator = urlValidator,
@@ -192,12 +212,14 @@ private class RecordingHttpClient : WebhookHttpClient {
     }
 }
 
-private fun aEndpoint() = WebhookEndpoint(
+private fun aEndpoint(
+    status: WebhookEndpointStatus = WebhookEndpointStatus.ACTIVE
+) = WebhookEndpoint(
     endpointId = "endpoint-001",
     merchantId = "merchant-001",
     url = "https://merchant.example/webhook",
     signingSecret = "secret",
-    status = WebhookEndpointStatus.ACTIVE,
+    status = status,
     description = null,
     createdAt = Instant.parse("2026-05-04T00:00:00Z"),
     updatedAt = Instant.parse("2026-05-04T00:00:00Z")
