@@ -1,32 +1,25 @@
-package com.pg.ochestration.presentation.web.dto
+package com.pg.ochestration.presentation.web.controller.response
 
-import com.pg.ochestration.application.port.out.GatewayCancelResult
+import com.pg.ochestration.application.service.result.PaymentCancelResult
+import com.pg.ochestration.application.service.result.PaymentFailureResult
 import com.pg.ochestration.domain.model.FailureCategory
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentAttempt
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
+import com.pg.ochestration.domain.model.SelectionSummary
 import java.time.Instant
-
-data class PaymentApproveRequest(
-    val orderId: String,
-    val amount: Long,
-    val currency: String = "KRW",
-    val requestedAt: Instant? = null,
-    val preferredPrimaryProvider: Provider? = null,
-    val metadata: Map<String, String> = emptyMap()
-)
-
-data class PaymentCancelRequest(
-    val reason: String,
-    val requestedAt: Instant? = null
-)
 
 data class PaymentFailureView(
     val code: String,
     val category: FailureCategory,
     val message: String
-)
+) {
+    companion object {
+        fun from(result: PaymentFailureResult): PaymentFailureView =
+            PaymentFailureView(code = result.code, category = result.category, message = result.message)
+    }
+}
 
 data class PaymentCancelResponse(
     val paymentId: String,
@@ -39,31 +32,19 @@ data class PaymentCancelResponse(
     val metadata: Map<String, String> = emptyMap()
 ) {
     companion object {
-        fun from(payment: Payment, cancelResult: GatewayCancelResult): PaymentCancelResponse =
+        fun from(result: PaymentCancelResult): PaymentCancelResponse =
             PaymentCancelResponse(
-                paymentId = payment.paymentId,
-                success = cancelResult.success,
-                status = cancelResult.status,
-                provider = requireNotNull(payment.approvedProvider) {
-                    "취소 응답 생성 실패: approvedProvider가 없습니다 — paymentId=${payment.paymentId}"
-                },
-                providerTxId = requireNotNull(payment.providerTxId) {
-                    "취소 응답 생성 실패: providerTxId가 없습니다 — paymentId=${payment.paymentId}"
-                },
-                canceledAt = cancelResult.canceledAt,
-                failure = cancelResult.failure?.let {
-                    PaymentFailureView(code = it.code, category = it.category, message = it.message)
-                },
-                metadata = cancelResult.metadata
+                paymentId = result.paymentId,
+                success = result.success,
+                status = result.status,
+                provider = result.provider,
+                providerTxId = result.providerTxId,
+                canceledAt = result.canceledAt,
+                failure = result.failure?.let { PaymentFailureView.from(it) },
+                metadata = result.metadata
             )
     }
 }
-
-data class ApiErrorResponse(
-    val errorCode: String,
-    val message: String,
-    val timestamp: Instant = Instant.now()
-)
 
 data class PaymentView(
     val paymentId: String,
@@ -82,7 +63,7 @@ data class PaymentView(
     val failure: PaymentFailureView?,
     val metadata: Map<String, String>,
     val attemptCount: Int,
-    val selectionSummary: com.pg.ochestration.domain.model.SelectionSummary,
+    val selectionSummary: SelectionSummary,
     val attempts: List<PaymentAttempt>
 ) {
     companion object {

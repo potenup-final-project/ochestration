@@ -2,10 +2,10 @@ package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.application.service.UnifiedPaymentService
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
-import com.pg.ochestration.presentation.web.dto.PaymentApproveRequest
-import com.pg.ochestration.presentation.web.dto.PaymentCancelRequest
-import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
-import com.pg.ochestration.presentation.web.dto.PaymentView
+import com.pg.ochestration.presentation.web.controller.request.PaymentApproveRequest
+import com.pg.ochestration.presentation.web.controller.request.PaymentCancelRequest
+import com.pg.ochestration.presentation.web.controller.response.PaymentCancelResponse
+import com.pg.ochestration.presentation.web.controller.response.PaymentView
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,16 +25,7 @@ class PaymentController(
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: String?,
         principal: MerchantPrincipal
     ): PaymentView {
-        val payment = unifiedPaymentService.approve(
-            principal = principal,
-            orderId = request.orderId,
-            amount = request.amount,
-            currency = request.currency,
-            idempotencyKey = idempotencyKey,
-            requestedAt = request.requestedAt,
-            preferredPrimaryProvider = request.preferredPrimaryProvider,
-            metadata = request.metadata
-        )
+        val payment = unifiedPaymentService.approve(request.toCommand(principal, idempotencyKey))
         return PaymentView.from(payment)
     }
 
@@ -52,11 +43,7 @@ class PaymentController(
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: String?,
         principal: MerchantPrincipal
     ): PaymentCancelResponse =
-        unifiedPaymentService.cancel(
-            principal = principal,
-            paymentId = paymentId,
-            reason = request.reason,
-            idempotencyKey = idempotencyKey,
-            requestedAt = request.requestedAt
+        PaymentCancelResponse.from(
+            unifiedPaymentService.cancel(request.toCommand(principal, paymentId, idempotencyKey))
         )
 }

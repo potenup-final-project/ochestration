@@ -1,5 +1,6 @@
 package com.pg.ochestration.application.orchestration
 
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.port.out.GatewayApproveCommand
 import com.pg.ochestration.application.port.out.PaymentIdGeneratorPort
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
@@ -15,17 +16,6 @@ import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Instant
-
-data class ApprovePaymentCommand(
-    val merchantId: String,
-    val orderId: String,
-    val amount: Long,
-    val currency: String,
-    val idempotencyKey: String,
-    val requestedAt: Instant,
-    val preferredPrimaryProvider: Provider?,
-    val metadata: Map<String, String>
-)
 
 @Component
 class PgOrchestrator(

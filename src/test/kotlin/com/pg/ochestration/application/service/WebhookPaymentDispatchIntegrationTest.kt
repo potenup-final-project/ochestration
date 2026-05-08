@@ -1,6 +1,6 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
 import com.pg.ochestration.application.port.out.PaymentIdGeneratorPort
 import com.pg.ochestration.application.port.out.PaymentSavePort
@@ -11,6 +11,7 @@ import com.pg.ochestration.application.port.out.WebhookHttpResponse
 import com.pg.ochestration.application.port.out.WebhookSigner
 import com.pg.ochestration.application.port.out.WebhookUrlValidationResult
 import com.pg.ochestration.application.port.out.WebhookUrlValidator
+import com.pg.ochestration.application.service.command.UnifiedPaymentApproveCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
@@ -20,7 +21,6 @@ import com.pg.ochestration.domain.model.WebhookDelivery
 import com.pg.ochestration.domain.model.WebhookDeliveryStatus
 import com.pg.ochestration.domain.model.WebhookEndpoint
 import com.pg.ochestration.domain.model.WebhookEndpointStatus
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import kotlinx.coroutines.runBlocking
 import org.springframework.transaction.PlatformTransactionManager
@@ -66,14 +66,17 @@ class WebhookPaymentDispatchIntegrationTest {
 
         val payment = runBlocking {
             service.approve(
-                principal = MerchantPrincipal("merchant-001", ApiKeyEnvironment.LIVE),
-                orderId = "order-001",
-                amount = 10_000L,
-                currency = "KRW",
-                idempotencyKey = null,
-                requestedAt = Instant.parse("2026-05-07T00:00:00Z"),
-                preferredPrimaryProvider = null,
-                metadata = emptyMap()
+                UnifiedPaymentApproveCommand(
+                    merchantId = "merchant-001",
+                    environment = ApiKeyEnvironment.LIVE,
+                    orderId = "order-001",
+                    amount = 10_000L,
+                    currency = "KRW",
+                    idempotencyKey = null,
+                    requestedAt = Instant.parse("2026-05-07T00:00:00Z"),
+                    preferredPrimaryProvider = null,
+                    metadata = emptyMap()
+                )
             )
         }
 

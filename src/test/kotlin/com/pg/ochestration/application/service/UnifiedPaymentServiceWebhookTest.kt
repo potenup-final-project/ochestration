@@ -1,6 +1,6 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
 import com.pg.ochestration.application.port.out.GatewayApproveCommand
 import com.pg.ochestration.application.port.out.GatewayApproveResult
@@ -13,6 +13,8 @@ import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.application.port.out.PaymentSavePort
 import com.pg.ochestration.application.port.out.WebhookDeliveryRepository
 import com.pg.ochestration.application.port.out.WebhookEndpointRepository
+import com.pg.ochestration.application.service.command.UnifiedPaymentApproveCommand
+import com.pg.ochestration.application.service.command.UnifiedPaymentCancelCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
@@ -49,7 +51,8 @@ class UnifiedPaymentServiceWebhookTest {
 
         val payment = runBlocking {
             service.approve(
-                principal = hookPrincipal(ApiKeyEnvironment.LIVE),
+                hookApproveCommand(
+                    environment = ApiKeyEnvironment.LIVE,
                 orderId = "order-001",
                 amount = 10_000L,
                 currency = "KRW",
@@ -57,6 +60,7 @@ class UnifiedPaymentServiceWebhookTest {
                 requestedAt = null,
                 preferredPrimaryProvider = null,
                 metadata = emptyMap()
+                )
             )
         }
 
@@ -72,7 +76,8 @@ class UnifiedPaymentServiceWebhookTest {
 
         val payment = runBlocking {
             service.approve(
-                principal = hookPrincipal(ApiKeyEnvironment.SANDBOX),
+                hookApproveCommand(
+                    environment = ApiKeyEnvironment.SANDBOX,
                 orderId = "order-fail-001",
                 amount = 10_000L,
                 currency = "KRW",
@@ -80,6 +85,7 @@ class UnifiedPaymentServiceWebhookTest {
                 requestedAt = null,
                 preferredPrimaryProvider = null,
                 metadata = emptyMap()
+                )
             )
         }
 
@@ -98,7 +104,8 @@ class UnifiedPaymentServiceWebhookTest {
 
         val payment = runBlocking {
             service.approve(
-                principal = hookPrincipal(ApiKeyEnvironment.LIVE),
+                hookApproveCommand(
+                    environment = ApiKeyEnvironment.LIVE,
                 orderId = "order-001",
                 amount = 10_000L,
                 currency = "KRW",
@@ -106,6 +113,7 @@ class UnifiedPaymentServiceWebhookTest {
                 requestedAt = null,
                 preferredPrimaryProvider = null,
                 metadata = emptyMap()
+                )
             )
         }
 
@@ -125,11 +133,13 @@ class UnifiedPaymentServiceWebhookTest {
 
         val response = runBlocking {
             service.cancel(
-                principal = hookPrincipal(ApiKeyEnvironment.LIVE),
+                hookCancelCommand(
+                    environment = ApiKeyEnvironment.LIVE,
                 paymentId = "payment-001",
                 reason = "고객 요청",
                 idempotencyKey = null,
                 requestedAt = null
+                )
             )
         }
 
@@ -150,11 +160,13 @@ class UnifiedPaymentServiceWebhookTest {
 
         val response = runBlocking {
             service.cancel(
-                principal = hookPrincipal(ApiKeyEnvironment.LIVE),
+                hookCancelCommand(
+                    environment = ApiKeyEnvironment.LIVE,
                 paymentId = "payment-001",
                 reason = "고객 요청",
                 idempotencyKey = null,
                 requestedAt = null
+                )
             )
         }
 
@@ -174,7 +186,8 @@ class UnifiedPaymentServiceWebhookTest {
         assertFailsWith<IllegalStateException> {
             runBlocking {
             service.approve(
-                principal = hookPrincipal(ApiKeyEnvironment.LIVE),
+                hookApproveCommand(
+                    environment = ApiKeyEnvironment.LIVE,
                 orderId = "order-001",
                 amount = 10_000L,
                 currency = "KRW",
@@ -182,6 +195,7 @@ class UnifiedPaymentServiceWebhookTest {
                 requestedAt = null,
                 preferredPrimaryProvider = null,
                 metadata = emptyMap()
+                )
             )
             }
         }
@@ -387,6 +401,42 @@ private class RecordingTransactionManager : PlatformTransactionManager {
 private fun hookPrincipal(environment: ApiKeyEnvironment) = MerchantPrincipal(
     merchantId = "merchant-001",
     environment = environment
+)
+
+private fun hookApproveCommand(
+    environment: ApiKeyEnvironment,
+    orderId: String,
+    amount: Long,
+    currency: String,
+    idempotencyKey: String?,
+    requestedAt: Instant?,
+    preferredPrimaryProvider: Provider?,
+    metadata: Map<String, String>
+) = UnifiedPaymentApproveCommand(
+    merchantId = "merchant-001",
+    environment = environment,
+    orderId = orderId,
+    amount = amount,
+    currency = currency,
+    idempotencyKey = idempotencyKey,
+    requestedAt = requestedAt,
+    preferredPrimaryProvider = preferredPrimaryProvider,
+    metadata = metadata
+)
+
+private fun hookCancelCommand(
+    environment: ApiKeyEnvironment,
+    paymentId: String,
+    reason: String,
+    idempotencyKey: String?,
+    requestedAt: Instant?
+) = UnifiedPaymentCancelCommand(
+    merchantId = "merchant-001",
+    environment = environment,
+    paymentId = paymentId,
+    reason = reason,
+    idempotencyKey = idempotencyKey,
+    requestedAt = requestedAt
 )
 
 private fun hookPayment(status: PaymentStatus): Payment {

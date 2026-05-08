@@ -1,18 +1,19 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
 import com.pg.ochestration.application.port.out.GatewayCancelCommand
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
+import com.pg.ochestration.application.service.command.UnifiedPaymentApproveCommand
+import com.pg.ochestration.application.service.command.UnifiedPaymentCancelCommand
+import com.pg.ochestration.application.service.result.PaymentCancelResult
+import com.pg.ochestration.application.service.result.PaymentFailureResult
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.WebhookEventType
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
-import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
-import com.pg.ochestration.presentation.web.dto.PaymentFailureView
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
@@ -27,34 +28,25 @@ class UnifiedPaymentService(
     private val webhookPaymentEventPublisher: WebhookPaymentEventPublisher,
     private val transactionTemplate: TransactionTemplate
 ) {
-    suspend fun approve(
-        principal: MerchantPrincipal,
-        orderId: String,
-        amount: Long,
-        currency: String,
-        idempotencyKey: String?,
-        requestedAt: Instant?,
-        preferredPrimaryProvider: Provider?,
-        metadata: Map<String, String>
-    ): Payment {
-        val command = ApprovePaymentCommand(
-            merchantId = principal.merchantId,
-            orderId = orderId,
-            amount = amount,
-            currency = currency,
-            idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString(),
-            requestedAt = requestedAt ?: Instant.now(),
-            preferredPrimaryProvider = preferredPrimaryProvider,
-            metadata = metadata
+    suspend fun approve(command: UnifiedPaymentApproveCommand): Payment {
+        val approveCommand = ApprovePaymentCommand(
+            merchantId = command.merchantId,
+            orderId = command.orderId,
+            amount = command.amount,
+            currency = command.currency,
+            idempotencyKey = command.idempotencyKey ?: UUID.randomUUID().toString(),
+            requestedAt = command.requestedAt ?: Instant.now(),
+            preferredPrimaryProvider = command.preferredPrimaryProvider,
+            metadata = command.metadata
         )
 
-        if (principal.environment == ApiKeyEnvironment.SANDBOX) {
-            return sandboxPaymentSimulator.simulateApprove(command) { payment ->
+        if (command.environment == ApiKeyEnvironment.SANDBOX) {
+            return sandboxPaymentSimulator.simulateApprove(approveCommand) { payment ->
                 savePaymentAndPublishApproveEvent(payment)
             }
         }
 
-        return pgOrchestrator.approve(command) { payment ->
+        return pgOrchestrator.approve(approveCommand) { payment ->
             savePaymentAndPublishApproveEvent(payment)
         }
     }
@@ -66,18 +58,12 @@ class UnifiedPaymentService(
         return payment
     }
 
-    suspend fun cancel(
-        principal: MerchantPrincipal,
-        paymentId: String,
-        reason: String,
-        idempotencyKey: String?,
-        requestedAt: Instant?
-    ): PaymentCancelResponse {
-        val payment = paymentRepository.findById(paymentId)
-            ?: throw IllegalArgumentException("결제를 찾을 수 없습니다: $paymentId")
-        payment.ensureOwnedBy(principal.merchantId)
+    suspend fun cancel(command: UnifiedPaymentCancelCommand): PaymentCancelResult {
+        val payment = paymentRepository.findById(command.paymentId)
+            ?: throw IllegalArgumentException("결제를 찾을 수 없습니다: ${command.paymentId}")
+        payment.ensureOwnedBy(command.merchantId)
 
-        if (principal.environment == ApiKeyEnvironment.SANDBOX) {
+        if (command.environment == ApiKeyEnvironment.SANDBOX) {
             val canceledPayment = sandboxPaymentSimulator.simulateCancel(payment) { canceled ->
                 savePaymentAndPublishWebhookEvent(canceled, WebhookEventType.PAYMENT_CANCELED)
             }
@@ -97,16 +83,16 @@ class UnifiedPaymentService(
                 merchantId = payment.merchantId,
                 paymentId = payment.paymentId,
                 providerTxId = providerTxId,
-                reason = reason,
-                idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString(),
-                requestedAt = requestedAt ?: Instant.now()
+                reason = command.reason,
+                idempotencyKey = command.idempotencyKey ?: UUID.randomUUID().toString(),
+                requestedAt = command.requestedAt ?: Instant.now()
             )
         )
 
         val canceled = payment.copy(
             status = cancelResult.status,
             canceledAt = cancelResult.canceledAt,
-            cancelReason = reason,
+            cancelReason = command.reason,
             failureCode = cancelResult.failure?.code,
             failureCategory = cancelResult.failure?.category,
             failureMessage = cancelResult.failure?.message,
@@ -118,24 +104,24 @@ class UnifiedPaymentService(
             paymentRepository.save(canceled)
         }
 
-        return PaymentCancelResponse(
-            paymentId = paymentId,
+        return PaymentCancelResult(
+            paymentId = command.paymentId,
             success = cancelResult.success,
             status = cancelResult.status,
             provider = approvedProvider,
             providerTxId = providerTxId,
             canceledAt = cancelResult.canceledAt,
             failure = cancelResult.failure?.let {
-                PaymentFailureView(code = it.code, category = it.category, message = it.message)
+                PaymentFailureResult(code = it.code, category = it.category, message = it.message)
             },
             metadata = cancelResult.metadata
         )
     }
 
-    private fun buildCancelResponse(payment: Payment): PaymentCancelResponse {
+    private fun buildCancelResponse(payment: Payment): PaymentCancelResult {
         val provider = payment.approvedProvider ?: Provider.TOSS
         val providerTxId = payment.providerTxId ?: ""
-        return PaymentCancelResponse(
+        return PaymentCancelResult(
             paymentId = payment.paymentId,
             success = true,
             status = payment.status,

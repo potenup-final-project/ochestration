@@ -2,8 +2,8 @@ package com.pg.ochestration.application.service
 
 import com.pg.ochestration.application.port.out.WebhookDeliveryRepository
 import com.pg.ochestration.application.port.out.WebhookEndpointRepository
+import com.pg.ochestration.application.service.dto.WebhookPaymentEventPayload
 import com.pg.ochestration.domain.model.Payment
-import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.WebhookDelivery
 import com.pg.ochestration.domain.model.WebhookDeliveryStatus
 import com.pg.ochestration.domain.model.WebhookEventType
@@ -51,35 +51,5 @@ class WebhookPaymentEventPublisher(
 
     private companion object {
         const val MAX_ATTEMPTS = 5
-    }
-}
-
-private data class WebhookPaymentEventPayload(
-    val eventType: String,
-    val eventId: String,
-    val paymentId: String,
-    val merchantId: String,
-    val amount: Long,
-    val currency: String,
-    val status: PaymentStatus,
-    val occurredAt: Instant
-) {
-    companion object {
-        fun from(
-            payment: Payment,
-            eventType: WebhookEventType,
-            eventId: String,
-            occurredAt: Instant
-        ): WebhookPaymentEventPayload =
-            WebhookPaymentEventPayload(
-                eventType = eventType.value,
-                eventId = eventId,
-                paymentId = payment.paymentId,
-                merchantId = payment.merchantId,
-                amount = payment.amount,
-                currency = payment.currency,
-                status = payment.status,
-                occurredAt = occurredAt
-            )
     }
 }

@@ -1,16 +1,16 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
 import com.pg.ochestration.application.port.out.PaymentIdGeneratorPort
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.application.port.out.PaymentSavePort
+import com.pg.ochestration.application.service.command.UnifiedPaymentApproveCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.SelectionSummary
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
@@ -30,14 +30,12 @@ class ApprovePaymentHandlerTest {
 
         val result = runBlocking {
             handler.handle(
-                principal = principal,
-                orderId = "order-001",
-                amount = 10_000L,
-                currency = "KRW",
-                idempotencyKey = null,
-                requestedAt = null,
-                preferredPrimaryProvider = null,
-                metadata = emptyMap()
+                approveCommand(
+                    merchantId = principal.merchantId,
+                    environment = principal.environment,
+                    orderId = "order-001",
+                    amount = 10_000L
+                )
             )
         }
 
@@ -54,14 +52,12 @@ class ApprovePaymentHandlerTest {
 
         val result = runBlocking {
             handler.handle(
-                principal = principal,
-                orderId = "order-sandbox-001",
-                amount = 5_000L,
-                currency = "KRW",
-                idempotencyKey = null,
-                requestedAt = null,
-                preferredPrimaryProvider = null,
-                metadata = emptyMap()
+                approveCommand(
+                    merchantId = principal.merchantId,
+                    environment = principal.environment,
+                    orderId = "order-sandbox-001",
+                    amount = 5_000L
+                )
             )
         }
 
@@ -77,14 +73,12 @@ class ApprovePaymentHandlerTest {
 
         val result = runBlocking {
             handler.handle(
-                principal = principal,
-                orderId = "order-fail-sandbox",
-                amount = 5_000L,
-                currency = "KRW",
-                idempotencyKey = null,
-                requestedAt = null,
-                preferredPrimaryProvider = null,
-                metadata = emptyMap()
+                approveCommand(
+                    merchantId = principal.merchantId,
+                    environment = principal.environment,
+                    orderId = "order-fail-sandbox",
+                    amount = 5_000L
+                )
             )
         }
 
@@ -97,14 +91,30 @@ class ApprovePaymentHandlerTest {
 // Fixtures & Stubs
 // -------------------------------------------------------------------------
 
-private fun livePrincipal() = MerchantPrincipal(
-    merchantId = "merchant-live-001",
-    environment = ApiKeyEnvironment.LIVE
+private data class TestPrincipal(
+    val merchantId: String,
+    val environment: ApiKeyEnvironment
 )
 
-private fun sandboxPrincipal() = MerchantPrincipal(
-    merchantId = "merchant-sandbox-001",
-    environment = ApiKeyEnvironment.SANDBOX
+private fun livePrincipal() = TestPrincipal("merchant-live-001", ApiKeyEnvironment.LIVE)
+
+private fun sandboxPrincipal() = TestPrincipal("merchant-sandbox-001", ApiKeyEnvironment.SANDBOX)
+
+private fun approveCommand(
+    merchantId: String,
+    environment: ApiKeyEnvironment,
+    orderId: String,
+    amount: Long
+): UnifiedPaymentApproveCommand = UnifiedPaymentApproveCommand(
+    merchantId = merchantId,
+    environment = environment,
+    orderId = orderId,
+    amount = amount,
+    currency = "KRW",
+    idempotencyKey = null,
+    requestedAt = null,
+    preferredPrimaryProvider = null,
+    metadata = emptyMap()
 )
 
 @Suppress("UNCHECKED_CAST")
