@@ -1,12 +1,12 @@
 package com.pg.ochestration.application.service
 
+import com.pg.ochestration.application.service.command.ProviderConnectCommand
 import com.pg.ochestration.domain.service.ProviderCapabilityRegistry
 import com.pg.ochestration.domain.model.ConnectionStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.ProviderCapability
 import com.pg.ochestration.domain.model.ProviderConnection
 import com.pg.ochestration.domain.model.ProviderHealthStatus
-import com.pg.ochestration.presentation.web.dto.ProviderConnectRequest
 import com.pg.ochestration.infrastructure.persistence.jpa.ProviderConnectionRepository
 import com.pg.ochestration.infrastructure.persistence.jpa.ProviderHealthRepository
 import org.slf4j.LoggerFactory
@@ -20,14 +20,14 @@ class ProviderManagementService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun connect(merchantId: String, request: ProviderConnectRequest): ProviderConnection {
+    fun connect(command: ProviderConnectCommand): ProviderConnection {
         val result = connectionRepository.upsert(
-            merchantId = merchantId,
-            provider = request.provider,
-            displayName = request.displayName,
+            merchantId = command.merchantId,
+            provider = command.provider,
+            displayName = command.displayName,
             status = ConnectionStatus.CONNECTED
         )
-        logger.info("[ProviderConnect] merchantId={} provider={} connected", merchantId, request.provider)
+        logger.info("[ProviderConnect] merchantId={} provider={} connected", command.merchantId, command.provider)
         return result
     }
 

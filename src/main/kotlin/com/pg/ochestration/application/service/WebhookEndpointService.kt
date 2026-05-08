@@ -3,6 +3,8 @@ package com.pg.ochestration.application.service
 import com.pg.ochestration.application.port.out.MerchantRepository
 import com.pg.ochestration.application.port.out.WebhookEndpointRepository
 import com.pg.ochestration.application.port.out.WebhookUrlValidator
+import com.pg.ochestration.application.service.command.WebhookEndpointUpdateCommand
+import com.pg.ochestration.application.service.result.WebhookEndpointCreateResult
 import com.pg.ochestration.domain.exception.MerchantNotFoundException
 import com.pg.ochestration.domain.exception.WebhookEndpointDescriptionTooLongException
 import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededException
@@ -62,20 +64,16 @@ class WebhookEndpointService(
         webhookEndpointRepository.findAllByMerchantId(merchantId)
 
     fun update(
-        merchantId: String,
-        endpointId: String,
-        url: String?,
-        status: WebhookEndpointStatus?,
-        description: String?
+        command: WebhookEndpointUpdateCommand
     ): WebhookEndpoint {
-        if (url != null) validateUrl(url)
-        validateDescription(description)
+        if (command.url != null) validateUrl(command.url)
+        validateDescription(command.description)
         return transactionTemplate.execute {
-            val endpoint = findOwned(merchantId, endpointId)
+            val endpoint = findOwned(command.merchantId, command.endpointId)
             val updated = endpoint.update(
-                url = url,
-                status = status,
-                description = description,
+                url = command.url,
+                status = command.status,
+                description = command.description,
                 now = Instant.now()
             )
             webhookEndpointRepository.save(updated)
@@ -124,8 +122,3 @@ class WebhookEndpointService(
         val secureRandom = SecureRandom()
     }
 }
-
-data class WebhookEndpointCreateResult(
-    val endpoint: WebhookEndpoint,
-    val signingSecret: String
-)

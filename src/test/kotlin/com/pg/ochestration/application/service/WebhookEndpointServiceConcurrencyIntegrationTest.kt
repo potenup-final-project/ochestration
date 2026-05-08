@@ -4,6 +4,7 @@ import com.pg.ochestration.application.port.out.MerchantRepository
 import com.pg.ochestration.application.port.out.WebhookEndpointRepository
 import com.pg.ochestration.application.port.out.WebhookUrlValidationResult
 import com.pg.ochestration.application.port.out.WebhookUrlValidator
+import com.pg.ochestration.application.service.result.WebhookEndpointCreateResult
 import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededException
 import com.pg.ochestration.domain.model.Merchant
 import com.pg.ochestration.domain.model.MerchantStatus

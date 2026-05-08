@@ -5,11 +5,11 @@ import com.pg.ochestration.domain.exception.EnvironmentMismatchForOnboardingExce
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
-import com.pg.ochestration.presentation.web.dto.ProviderConnectRequest
-import com.pg.ochestration.presentation.web.dto.ProviderConnectionResponse
-import com.pg.ochestration.presentation.web.dto.ProviderDisconnectResponse
-import com.pg.ochestration.presentation.web.dto.ProviderHealthResponse
-import com.pg.ochestration.presentation.web.dto.ProviderHealthUpdateRequest
+import com.pg.ochestration.presentation.web.controller.request.ProviderConnectRequest
+import com.pg.ochestration.presentation.web.controller.request.ProviderHealthUpdateRequest
+import com.pg.ochestration.presentation.web.controller.response.ProviderConnectionResponse
+import com.pg.ochestration.presentation.web.controller.response.ProviderDisconnectResponse
+import com.pg.ochestration.presentation.web.controller.response.ProviderHealthResponse
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -34,27 +34,15 @@ class ProviderController(
         if (principal.environment == ApiKeyEnvironment.SANDBOX) {
             throw EnvironmentMismatchForOnboardingException("LIVE", "SANDBOX")
         }
-        val connected = providerManagementService.connect(principal.merchantId, request)
-        return ProviderConnectionResponse(
-            providerConnectionId = connected.providerConnectionId,
-            merchantId = connected.merchantId,
-            provider = connected.provider,
-            displayName = connected.displayName,
-            status = connected.status
-        )
+        val connected = providerManagementService.connect(request.toCommand(principal.merchantId))
+        return ProviderConnectionResponse.from(connected)
     }
 
     @GetMapping
     fun getProviders(principal: MerchantPrincipal): List<ProviderConnectionResponse> {
         log.debug("Provider 목록 조회: merchantId={}", principal.merchantId)
         return providerManagementService.listConnections().map {
-            ProviderConnectionResponse(
-                providerConnectionId = it.providerConnectionId,
-                merchantId = it.merchantId,
-                provider = it.provider,
-                displayName = it.displayName,
-                status = it.status
-            )
+            ProviderConnectionResponse.from(it)
         }
     }
 
@@ -67,11 +55,7 @@ class ProviderController(
             throw EnvironmentMismatchForOnboardingException("LIVE", "SANDBOX")
         }
         val disconnected = providerManagementService.disconnect(principal.merchantId, provider)
-        return ProviderDisconnectResponse(
-            provider = disconnected.provider,
-            merchantId = disconnected.merchantId,
-            status = disconnected.status
-        )
+        return ProviderDisconnectResponse.from(disconnected)
     }
 
     @GetMapping("/capabilities")

@@ -1,13 +1,14 @@
 package com.pg.ochestration.presentation.web.controller
 
-import com.pg.ochestration.application.service.WebhookEndpointCreateResult
+import com.pg.ochestration.application.service.command.WebhookEndpointUpdateCommand
+import com.pg.ochestration.application.service.result.WebhookEndpointCreateResult
 import com.pg.ochestration.application.service.WebhookEndpointService
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.WebhookEndpoint
 import com.pg.ochestration.domain.model.WebhookEndpointStatus
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
-import com.pg.ochestration.presentation.web.dto.CreateWebhookEndpointRequest
-import com.pg.ochestration.presentation.web.dto.UpdateWebhookEndpointRequest
+import com.pg.ochestration.presentation.web.controller.request.CreateWebhookEndpointRequest
+import com.pg.ochestration.presentation.web.controller.request.UpdateWebhookEndpointRequest
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -65,11 +66,13 @@ class WebhookEndpointControllerTest {
     fun `update는 principal merchantId로 서비스에 위임한다`() {
         `when`(
             service.update(
-                merchantId = "merchant-001",
-                endpointId = "endpoint-001",
-                url = "https://merchant.example/updated",
-                status = WebhookEndpointStatus.INACTIVE,
-                description = "수정"
+                WebhookEndpointUpdateCommand(
+                    merchantId = "merchant-001",
+                    endpointId = "endpoint-001",
+                    url = "https://merchant.example/updated",
+                    status = WebhookEndpointStatus.INACTIVE,
+                    description = "수정"
+                )
             )
         ).thenReturn(anEndpoint(status = WebhookEndpointStatus.INACTIVE, description = "수정"))
 
@@ -80,11 +83,13 @@ class WebhookEndpointControllerTest {
         )
 
         verify(service).update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = "https://merchant.example/updated",
-            status = WebhookEndpointStatus.INACTIVE,
-            description = "수정"
+            WebhookEndpointUpdateCommand(
+                merchantId = "merchant-001",
+                endpointId = "endpoint-001",
+                url = "https://merchant.example/updated",
+                status = WebhookEndpointStatus.INACTIVE,
+                description = "수정"
+            )
         )
     }
 
@@ -92,11 +97,13 @@ class WebhookEndpointControllerTest {
     fun `update는 description 필드가 없으면 null로 위임한다`() {
         `when`(
             service.update(
-                merchantId = "merchant-001",
-                endpointId = "endpoint-001",
-                url = null,
-                status = WebhookEndpointStatus.INACTIVE,
-                description = null
+                WebhookEndpointUpdateCommand(
+                    merchantId = "merchant-001",
+                    endpointId = "endpoint-001",
+                    url = null,
+                    status = WebhookEndpointStatus.INACTIVE,
+                    description = null
+                )
             )
         ).thenReturn(anEndpoint(status = WebhookEndpointStatus.INACTIVE, description = "기존"))
 
@@ -107,11 +114,13 @@ class WebhookEndpointControllerTest {
         )
 
         verify(service).update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = null,
-            status = WebhookEndpointStatus.INACTIVE,
-            description = null
+            WebhookEndpointUpdateCommand(
+                merchantId = "merchant-001",
+                endpointId = "endpoint-001",
+                url = null,
+                status = WebhookEndpointStatus.INACTIVE,
+                description = null
+            )
         )
     }
 
@@ -119,11 +128,13 @@ class WebhookEndpointControllerTest {
     fun `update는 description null을 null로 위임한다`() {
         `when`(
             service.update(
-                merchantId = "merchant-001",
-                endpointId = "endpoint-001",
-                url = null,
-                status = null,
-                description = null
+                WebhookEndpointUpdateCommand(
+                    merchantId = "merchant-001",
+                    endpointId = "endpoint-001",
+                    url = null,
+                    status = null,
+                    description = null
+                )
             )
         ).thenReturn(anEndpoint(description = "기존"))
 
@@ -134,11 +145,13 @@ class WebhookEndpointControllerTest {
         )
 
         verify(service).update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = null,
-            status = null,
-            description = null
+            WebhookEndpointUpdateCommand(
+                merchantId = "merchant-001",
+                endpointId = "endpoint-001",
+                url = null,
+                status = null,
+                description = null
+            )
         )
     }
 
