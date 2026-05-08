@@ -1,7 +1,7 @@
 package com.pg.ochestration.presentation.web.controller
 
-import com.pg.ochestration.application.usecase.IssueApiKeyCommand
-import com.pg.ochestration.application.usecase.IssueApiKeyResult
+import com.pg.ochestration.application.usecase.command.IssueApiKeyCommand
+import com.pg.ochestration.application.usecase.result.IssueApiKeyResult
 import com.pg.ochestration.application.usecase.IssueApiKeyUseCase
 import com.pg.ochestration.application.usecase.RevokeApiKeyUseCase
 import com.pg.ochestration.domain.exception.InvalidApiKeyStateException

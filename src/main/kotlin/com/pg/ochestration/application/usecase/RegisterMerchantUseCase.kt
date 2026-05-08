@@ -3,6 +3,7 @@ package com.pg.ochestration.application.usecase
 import com.pg.ochestration.application.port.out.EmailPort
 import com.pg.ochestration.application.port.out.EmailVerificationTokenRepository
 import com.pg.ochestration.application.port.out.MerchantRepository
+import com.pg.ochestration.application.usecase.result.RegisterMerchantResult
 import com.pg.ochestration.domain.exception.DuplicateEmailException
 import com.pg.ochestration.domain.model.EmailVerificationToken
 import com.pg.ochestration.domain.model.Merchant
@@ -18,12 +19,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-
-data class RegisterMerchantResult(
-    val merchantId: String,
-    val email: String,
-    val status: MerchantStatus
-)
 
 @Service
 class RegisterMerchantUseCase(

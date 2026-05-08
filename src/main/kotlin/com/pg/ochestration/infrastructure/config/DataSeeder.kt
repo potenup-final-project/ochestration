@@ -1,7 +1,7 @@
 package com.pg.ochestration.infrastructure.config
 
 import com.pg.ochestration.application.port.out.MerchantRepository
-import com.pg.ochestration.application.usecase.IssueApiKeyCommand
+import com.pg.ochestration.application.usecase.command.IssueApiKeyCommand
 import com.pg.ochestration.application.usecase.IssueApiKeyUseCase
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Merchant

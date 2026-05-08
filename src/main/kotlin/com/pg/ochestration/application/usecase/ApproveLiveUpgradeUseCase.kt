@@ -1,6 +1,8 @@
 package com.pg.ochestration.application.usecase
 
 import com.pg.ochestration.application.port.out.MerchantRepository
+import com.pg.ochestration.application.usecase.command.IssueApiKeyCommand
+import com.pg.ochestration.application.usecase.result.ApproveLiveUpgradeResult
 import com.pg.ochestration.domain.exception.MerchantNotFoundException
 import com.pg.ochestration.domain.exception.MerchantNotEligibleForLiveException
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
@@ -8,12 +10,6 @@ import com.pg.ochestration.domain.model.MerchantStatus
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
-data class ApproveLiveUpgradeResult(
-    val merchantId: String,
-    val status: MerchantStatus,
-    val liveKeyId: String
-)
 
 @Service
 class ApproveLiveUpgradeUseCase(

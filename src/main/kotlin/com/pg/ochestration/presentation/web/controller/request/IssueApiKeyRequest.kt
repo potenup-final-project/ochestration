@@ -1,6 +1,6 @@
 package com.pg.ochestration.presentation.web.controller.request
 
-import com.pg.ochestration.application.usecase.IssueApiKeyCommand
+import com.pg.ochestration.application.usecase.command.IssueApiKeyCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 
 data class IssueApiKeyRequest(
