@@ -1,20 +1,9 @@
-package com.pg.ochestration.presentation.web.dto
+package com.pg.ochestration.presentation.web.controller.response
 
-import com.pg.ochestration.application.service.WebhookEndpointCreateResult
+import com.pg.ochestration.application.service.result.WebhookEndpointCreateResult
 import com.pg.ochestration.domain.model.WebhookEndpoint
 import com.pg.ochestration.domain.model.WebhookEndpointStatus
 import java.time.Instant
-
-data class CreateWebhookEndpointRequest(
-    val url: String,
-    val description: String? = null
-)
-
-data class UpdateWebhookEndpointRequest(
-    val url: String? = null,
-    val status: WebhookEndpointStatus? = null,
-    val description: String? = null
-)
 
 data class WebhookEndpointCreateResponse(
     val endpointId: String,

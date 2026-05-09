@@ -2,15 +2,16 @@ package com.pg.ochestration.application.service
 
 import com.pg.ochestration.application.port.out.GatewayCancelCommand
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
+import com.pg.ochestration.application.service.command.UnifiedPaymentCancelCommand
+import com.pg.ochestration.application.service.result.PaymentCancelResult
+import com.pg.ochestration.application.service.result.PaymentFailureResult
 import com.pg.ochestration.domain.exception.PaymentNotFoundException
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentFailure
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
-import com.pg.ochestration.presentation.web.dto.PaymentCancelResponse
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -24,30 +25,24 @@ class CancelPaymentHandler(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    suspend fun handle(
-        principal: MerchantPrincipal,
-        paymentId: String,
-        reason: String,
-        idempotencyKey: String?,
-        requestedAt: Instant?
-    ): PaymentCancelResponse {
-        val payment = paymentRepository.findById(paymentId)
-            ?: throw PaymentNotFoundException(paymentId)
-        payment.ensureOwnedBy(principal.merchantId)
+    suspend fun handle(command: UnifiedPaymentCancelCommand): PaymentCancelResult {
+        val payment = paymentRepository.findById(command.paymentId)
+            ?: throw PaymentNotFoundException(command.paymentId)
+        payment.ensureOwnedBy(command.merchantId)
         payment.ensureCancelable()
 
-        if (principal.environment == ApiKeyEnvironment.SANDBOX) {
+        if (command.environment == ApiKeyEnvironment.SANDBOX) {
             return handleSandboxCancel(payment)
         }
 
-        return handleLiveCancel(payment, reason, idempotencyKey, requestedAt)
+        return handleLiveCancel(payment, command.reason, command.idempotencyKey, command.requestedAt)
     }
 
-    private fun handleSandboxCancel(payment: Payment): PaymentCancelResponse {
+    private fun handleSandboxCancel(payment: Payment): PaymentCancelResult {
         val canceledPayment = sandboxPaymentSimulator.simulateCancel(payment)
         val provider = canceledPayment.approvedProvider
             ?: error("Sandbox 취소 응답 생성 실패: approvedProvider가 없습니다 — paymentId=${payment.paymentId}")
-        return PaymentCancelResponse(
+        return PaymentCancelResult(
             paymentId = canceledPayment.paymentId,
             success = true,
             status = canceledPayment.status,
@@ -64,7 +59,7 @@ class CancelPaymentHandler(
         reason: String,
         idempotencyKey: String?,
         requestedAt: Instant?
-    ): PaymentCancelResponse {
+    ): PaymentCancelResult {
         val approvedProvider = requireNotNull(payment.approvedProvider) {
             "취소 처리 실패: approvedProvider가 없습니다 — paymentId=${payment.paymentId}"
         }
@@ -101,7 +96,18 @@ class CancelPaymentHandler(
         val canceledWithMeta = withMetadata(canceledPayment, payment.metadata + cancelResult.metadata)
         paymentRepository.save(canceledWithMeta)
 
-        return PaymentCancelResponse.from(payment, cancelResult)
+        return PaymentCancelResult(
+            paymentId = payment.paymentId,
+            success = cancelResult.success,
+            status = cancelResult.status,
+            provider = approvedProvider,
+            providerTxId = providerTxId,
+            canceledAt = cancelResult.canceledAt,
+            failure = cancelResult.failure?.let {
+                PaymentFailureResult(code = it.code, category = it.category, message = it.message)
+            },
+            metadata = cancelResult.metadata
+        )
     }
 
     private fun withMetadata(payment: Payment, metadata: Map<String, String>): Payment =

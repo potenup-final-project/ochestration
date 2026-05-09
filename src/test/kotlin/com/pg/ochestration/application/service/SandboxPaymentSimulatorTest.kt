@@ -1,6 +1,6 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.port.out.PaymentSavePort
 import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus

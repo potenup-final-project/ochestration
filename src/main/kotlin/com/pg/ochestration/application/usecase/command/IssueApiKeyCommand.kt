@@ -1,4 +1,4 @@
-package com.pg.ochestration.application.usecase
+package com.pg.ochestration.application.usecase.command
 
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 

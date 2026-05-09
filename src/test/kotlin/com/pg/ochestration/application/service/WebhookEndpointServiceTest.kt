@@ -4,6 +4,7 @@ import com.pg.ochestration.application.port.out.MerchantRepository
 import com.pg.ochestration.application.port.out.WebhookEndpointRepository
 import com.pg.ochestration.application.port.out.WebhookUrlValidationResult
 import com.pg.ochestration.application.port.out.WebhookUrlValidator
+import com.pg.ochestration.application.service.command.WebhookEndpointUpdateCommand
 import com.pg.ochestration.domain.exception.WebhookEndpointDescriptionTooLongException
 import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededException
 import com.pg.ochestration.domain.exception.WebhookEndpointNotFoundException
@@ -114,11 +115,11 @@ class WebhookEndpointServiceTest {
         val service = aService(webhookEndpointRepository = repository)
 
         val updated = service.update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = "https://merchant.example/updated",
-            status = WebhookEndpointStatus.INACTIVE,
-            description = "new"
+            updateCommand(
+                url = "https://merchant.example/updated",
+                status = WebhookEndpointStatus.INACTIVE,
+                description = "new"
+            )
         )
 
         assertEquals("https://merchant.example/updated", updated.url)
@@ -133,11 +134,7 @@ class WebhookEndpointServiceTest {
         val service = aService(webhookEndpointRepository = repository)
 
         val updated = service.update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = null,
-            status = WebhookEndpointStatus.INACTIVE,
-            description = null
+            updateCommand(status = WebhookEndpointStatus.INACTIVE)
         )
 
         assertEquals("https://merchant.example/webhook", updated.url)
@@ -152,11 +149,7 @@ class WebhookEndpointServiceTest {
         val service = aService(webhookEndpointRepository = repository)
 
         val updated = service.update(
-            merchantId = "merchant-001",
-            endpointId = "endpoint-001",
-            url = null,
-            status = null,
-            description = null
+            updateCommand()
         )
 
         assertEquals("old", updated.description)
@@ -193,6 +186,20 @@ private fun aService(
     webhookEndpointRepository = webhookEndpointRepository,
     webhookUrlValidator = webhookUrlValidator,
     transactionTemplate = TransactionTemplate(FakeTransactionManager)
+)
+
+private fun updateCommand(
+    merchantId: String = "merchant-001",
+    endpointId: String = "endpoint-001",
+    url: String? = null,
+    status: WebhookEndpointStatus? = null,
+    description: String? = null
+) = WebhookEndpointUpdateCommand(
+    merchantId = merchantId,
+    endpointId = endpointId,
+    url = url,
+    status = status,
+    description = description
 )
 
 private object FakeTransactionManager : PlatformTransactionManager {

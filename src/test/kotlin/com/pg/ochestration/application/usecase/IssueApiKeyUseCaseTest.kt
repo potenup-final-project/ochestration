@@ -1,6 +1,7 @@
 package com.pg.ochestration.application.usecase
 
 import com.pg.ochestration.application.port.out.MerchantApiKeyRepository
+import com.pg.ochestration.application.usecase.command.IssueApiKeyCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.ApiKeyScope
 import com.pg.ochestration.domain.model.ApiKeyStatus

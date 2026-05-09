@@ -2,10 +2,10 @@ package com.pg.ochestration.presentation.web.controller
 
 import com.pg.ochestration.application.service.WebhookEndpointService
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
-import com.pg.ochestration.presentation.web.dto.CreateWebhookEndpointRequest
-import com.pg.ochestration.presentation.web.dto.UpdateWebhookEndpointRequest
-import com.pg.ochestration.presentation.web.dto.WebhookEndpointCreateResponse
-import com.pg.ochestration.presentation.web.dto.WebhookEndpointView
+import com.pg.ochestration.presentation.web.controller.request.CreateWebhookEndpointRequest
+import com.pg.ochestration.presentation.web.controller.request.UpdateWebhookEndpointRequest
+import com.pg.ochestration.presentation.web.controller.response.WebhookEndpointCreateResponse
+import com.pg.ochestration.presentation.web.controller.response.WebhookEndpointView
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -55,11 +55,7 @@ class WebhookEndpointController(
     ): WebhookEndpointView =
         WebhookEndpointView.from(
             webhookEndpointService.update(
-                merchantId = principal.merchantId,
-                endpointId = endpointId,
-                url = request.url,
-                status = request.status,
-                description = request.description
+                request.toCommand(merchantId = principal.merchantId, endpointId = endpointId)
             )
         )
 

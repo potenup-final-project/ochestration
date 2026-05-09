@@ -17,7 +17,7 @@ import com.pg.ochestration.domain.exception.WebhookEndpointLimitExceededExceptio
 import com.pg.ochestration.domain.exception.WebhookEndpointNotFoundException
 import com.pg.ochestration.domain.exception.WebhookEndpointUrlNotAllowedException
 import com.pg.ochestration.domain.exception.WebhookException
-import com.pg.ochestration.presentation.web.dto.ApiErrorResponse
+import com.pg.ochestration.presentation.web.controller.response.ApiErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler

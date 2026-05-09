@@ -1,6 +1,6 @@
 package com.pg.ochestration.presentation.web.controller.response
 
-import com.pg.ochestration.application.usecase.IssueApiKeyResult
+import com.pg.ochestration.application.usecase.result.IssueApiKeyResult
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.ApiKeyStatus
 import java.time.Instant

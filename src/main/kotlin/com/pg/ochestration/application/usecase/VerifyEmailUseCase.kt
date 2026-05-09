@@ -3,9 +3,9 @@ package com.pg.ochestration.application.usecase
 import com.pg.ochestration.application.port.out.EmailVerificationTokenRepository
 import com.pg.ochestration.application.port.out.MerchantRepository
 import com.pg.ochestration.application.port.out.OnboardingTokenRepository
+import com.pg.ochestration.application.usecase.result.VerifyEmailResult
 import com.pg.ochestration.domain.exception.InvalidEmailTokenException
 import com.pg.ochestration.domain.exception.MerchantNotFoundException
-import com.pg.ochestration.domain.model.MerchantStatus
 import com.pg.ochestration.domain.model.OnboardingToken
 import com.pg.ochestration.infrastructure.token.TokenHasher
 import org.slf4j.LoggerFactory
@@ -15,13 +15,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-
-data class VerifyEmailResult(
-    val merchantId: String,
-    val status: MerchantStatus,
-    val onboardingToken: String,
-    val expiresAt: Instant
-)
 
 @Service
 class VerifyEmailUseCase(

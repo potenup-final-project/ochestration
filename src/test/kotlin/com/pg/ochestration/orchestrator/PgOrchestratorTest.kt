@@ -1,5 +1,6 @@
 package com.pg.ochestration.application.orchestration
 
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
 import com.pg.ochestration.application.port.out.GatewayApproveCommand
 import com.pg.ochestration.application.port.out.GatewayApproveResult
 import com.pg.ochestration.application.port.out.GatewayCancelCommand

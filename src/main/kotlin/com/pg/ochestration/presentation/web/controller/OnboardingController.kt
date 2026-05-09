@@ -4,59 +4,22 @@ import com.pg.ochestration.application.usecase.GetMerchantStatusUseCase
 import com.pg.ochestration.application.usecase.RegisterMerchantUseCase
 import com.pg.ochestration.application.usecase.RequestLiveUpgradeUseCase
 import com.pg.ochestration.application.usecase.VerifyEmailUseCase
-import com.pg.ochestration.domain.model.MerchantStatus
 import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
 import org.springframework.http.HttpStatus
+import com.pg.ochestration.presentation.web.controller.request.LiveUpgradeRequest
+import com.pg.ochestration.presentation.web.controller.request.RegisterRequest
+import com.pg.ochestration.presentation.web.controller.request.VerifyEmailRequest
+import com.pg.ochestration.presentation.web.controller.response.LiveUpgradeResponse
+import com.pg.ochestration.presentation.web.controller.response.MerchantStatusResponse
+import com.pg.ochestration.presentation.web.controller.response.RegisterResponse
+import com.pg.ochestration.presentation.web.controller.response.VerifyEmailResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.time.Instant
-
-data class RegisterRequest(
-    @field:NotBlank @field:Email val email: String,
-    @field:NotBlank val password: String,
-    val businessName: String? = null
-)
-
-data class RegisterResponse(
-    val merchantId: String,
-    val status: MerchantStatus,
-    val message: String = "이메일 인증 링크를 발송했습니다"
-)
-
-data class VerifyEmailRequest(
-    @field:NotBlank val token: String
-)
-
-data class VerifyEmailResponse(
-    val merchantId: String,
-    val status: MerchantStatus,
-    val onboardingToken: String,
-    val onboardingTokenExpiresAt: Instant
-)
-
-data class LiveUpgradeRequest(
-    @field:NotBlank val businessRegistrationNumber: String,
-    @field:NotBlank val businessRegistrationFileUrl: String
-)
-
-data class LiveUpgradeResponse(
-    val merchantId: String,
-    val status: MerchantStatus
-)
-
-data class MerchantStatusResponse(
-    val merchantId: String,
-    val email: String,
-    val status: MerchantStatus,
-    val businessName: String?
-)
 
 @RestController
 @RequestMapping("/api/onboarding")

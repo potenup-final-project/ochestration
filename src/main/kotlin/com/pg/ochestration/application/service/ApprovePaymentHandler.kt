@@ -1,11 +1,10 @@
 package com.pg.ochestration.application.service
 
-import com.pg.ochestration.application.orchestration.ApprovePaymentCommand
 import com.pg.ochestration.application.orchestration.PgOrchestrator
+import com.pg.ochestration.application.orchestration.command.ApprovePaymentCommand
+import com.pg.ochestration.application.service.command.UnifiedPaymentApproveCommand
 import com.pg.ochestration.domain.model.ApiKeyEnvironment
 import com.pg.ochestration.domain.model.Payment
-import com.pg.ochestration.domain.model.Provider
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.UUID
@@ -15,31 +14,22 @@ class ApprovePaymentHandler(
     private val pgOrchestrator: PgOrchestrator,
     private val sandboxPaymentSimulator: SandboxPaymentSimulator
 ) {
-    suspend fun handle(
-        principal: MerchantPrincipal,
-        orderId: String,
-        amount: Long,
-        currency: String,
-        idempotencyKey: String?,
-        requestedAt: Instant?,
-        preferredPrimaryProvider: Provider?,
-        metadata: Map<String, String>
-    ): Payment {
-        val command = ApprovePaymentCommand(
-            merchantId = principal.merchantId,
-            orderId = orderId,
-            amount = amount,
-            currency = currency,
-            idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString(),
-            requestedAt = requestedAt ?: Instant.now(),
-            preferredPrimaryProvider = preferredPrimaryProvider,
-            metadata = metadata
+    suspend fun handle(command: UnifiedPaymentApproveCommand): Payment {
+        val approveCommand = ApprovePaymentCommand(
+            merchantId = command.merchantId,
+            orderId = command.orderId,
+            amount = command.amount,
+            currency = command.currency,
+            idempotencyKey = command.idempotencyKey ?: UUID.randomUUID().toString(),
+            requestedAt = command.requestedAt ?: Instant.now(),
+            preferredPrimaryProvider = command.preferredPrimaryProvider,
+            metadata = command.metadata
         )
 
-        return if (principal.environment == ApiKeyEnvironment.SANDBOX) {
-            sandboxPaymentSimulator.simulateApprove(command)
+        return if (command.environment == ApiKeyEnvironment.SANDBOX) {
+            sandboxPaymentSimulator.simulateApprove(approveCommand)
         } else {
-            pgOrchestrator.approve(command)
+            pgOrchestrator.approve(approveCommand)
         }
     }
 }

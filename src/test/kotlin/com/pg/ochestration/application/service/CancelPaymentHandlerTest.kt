@@ -8,6 +8,7 @@ import com.pg.ochestration.application.port.out.GatewayPaymentQuery
 import com.pg.ochestration.application.port.out.GatewayPaymentResult
 import com.pg.ochestration.application.port.out.PaymentProviderGateway
 import com.pg.ochestration.application.port.out.PaymentSavePort
+import com.pg.ochestration.application.service.command.UnifiedPaymentCancelCommand
 import com.pg.ochestration.domain.exception.PaymentNotFoundException
 import com.pg.ochestration.domain.exception.PaymentNotCancelableException
 import com.pg.ochestration.domain.exception.PaymentAccessDeniedException
@@ -17,7 +18,6 @@ import com.pg.ochestration.domain.model.Payment
 import com.pg.ochestration.domain.model.PaymentStatus
 import com.pg.ochestration.domain.model.Provider
 import com.pg.ochestration.domain.model.SelectionSummary
-import com.pg.ochestration.infrastructure.auth.MerchantPrincipal
 import com.pg.ochestration.infrastructure.persistence.jpa.PaymentRepository
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
@@ -38,11 +38,11 @@ class CancelPaymentHandlerTest {
 
         val result = runBlocking {
             handler.handle(
-                principal = livePrincipal("merch-001"),
-                paymentId = "pay-001",
-                reason = "고객 요청",
-                idempotencyKey = null,
-                requestedAt = null
+                cancelCommand(
+                    merchantId = "merch-001",
+                    paymentId = "pay-001",
+                    reason = "고객 요청"
+                )
             )
         }
 
@@ -60,11 +60,11 @@ class CancelPaymentHandlerTest {
         assertFailsWith<PaymentNotCancelableException> {
             runBlocking {
                 handler.handle(
-                    principal = livePrincipal("merch-001"),
-                    paymentId = "pay-002",
-                    reason = "테스트",
-                    idempotencyKey = null,
-                    requestedAt = null
+                    cancelCommand(
+                        merchantId = "merch-001",
+                        paymentId = "pay-002",
+                        reason = "테스트"
+                    )
                 )
             }
         }
@@ -79,11 +79,11 @@ class CancelPaymentHandlerTest {
         assertFailsWith<PaymentAccessDeniedException> {
             runBlocking {
                 handler.handle(
-                    principal = livePrincipal("merch-intruder"),
-                    paymentId = "pay-003",
-                    reason = "불법 접근",
-                    idempotencyKey = null,
-                    requestedAt = null
+                    cancelCommand(
+                        merchantId = "merch-intruder",
+                        paymentId = "pay-003",
+                        reason = "불법 접근"
+                    )
                 )
             }
         }
@@ -97,11 +97,11 @@ class CancelPaymentHandlerTest {
         assertFailsWith<PaymentNotFoundException> {
             runBlocking {
                 handler.handle(
-                    principal = livePrincipal("merch-001"),
-                    paymentId = "pay-nonexistent",
-                    reason = "테스트",
-                    idempotencyKey = null,
-                    requestedAt = null
+                    cancelCommand(
+                        merchantId = "merch-001",
+                        paymentId = "pay-nonexistent",
+                        reason = "테스트"
+                    )
                 )
             }
         }
@@ -116,11 +116,12 @@ class CancelPaymentHandlerTest {
 
         val result = runBlocking {
             handler.handle(
-                principal = sandboxPrincipal("merch-sandbox"),
-                paymentId = "pay-sandbox-001",
-                reason = "Sandbox 취소 테스트",
-                idempotencyKey = null,
-                requestedAt = null
+                cancelCommand(
+                    merchantId = "merch-sandbox",
+                    environment = ApiKeyEnvironment.SANDBOX,
+                    paymentId = "pay-sandbox-001",
+                    reason = "Sandbox 취소 테스트"
+                )
             )
         }
 
@@ -136,14 +137,18 @@ class CancelPaymentHandlerTest {
 @Suppress("UNCHECKED_CAST")
 private fun <T> nullStub(): T = null as T
 
-private fun livePrincipal(merchantId: String) = MerchantPrincipal(
+private fun cancelCommand(
+    merchantId: String,
+    environment: ApiKeyEnvironment = ApiKeyEnvironment.LIVE,
+    paymentId: String,
+    reason: String
+) = UnifiedPaymentCancelCommand(
     merchantId = merchantId,
-    environment = ApiKeyEnvironment.LIVE
-)
-
-private fun sandboxPrincipal(merchantId: String) = MerchantPrincipal(
-    merchantId = merchantId,
-    environment = ApiKeyEnvironment.SANDBOX
+    environment = environment,
+    paymentId = paymentId,
+    reason = reason,
+    idempotencyKey = null,
+    requestedAt = null
 )
 
 private fun anApprovedPayment(paymentId: String, merchantId: String) = Payment(
